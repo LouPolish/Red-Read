@@ -3,7 +3,7 @@
  * Caches app shell for offline use. Document content is stored in IndexedDB.
  */
 
-const CACHE_NAME = 'speed-reader-v2';
+const CACHE_NAME = 'speed-reader-v3';
 const APP_SHELL = [
     '/',
     '/index.html',

@@ -940,10 +940,14 @@
                     if (this.isPlaying) {
                         this.pause();
                     }
-                } else if (this.wasPlayingBeforeHidden) {
-                    // Don't auto-resume, notify app to show "tap to resume"
-                    this.onInterrupted();
-                    this.wasPlayingBeforeHidden = false;
+                } else {
+                    // Re-acquire wake lock if reading is active
+                    if (this.isPlaying) WakeLock.acquire();
+                    if (this.wasPlayingBeforeHidden) {
+                        // Don't auto-resume, notify app to show "tap to resume"
+                        this.onInterrupted();
+                        this.wasPlayingBeforeHidden = false;
+                    }
                 }
             });
         }
@@ -990,6 +994,7 @@
             this.lastTimestamp = null;
             this.currentTokenDuration = getDisplayDuration(this.tokens[this.currentIndex], this.wpm);
             this.rafId = requestAnimationFrame((ts) => this.tick(ts));
+            WakeLock.acquire();
             this.emitStateChange();
         }
 
@@ -997,6 +1002,7 @@
             this.isPlaying = false;
             if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
             this.lastTimestamp = null;
+            WakeLock.release();
             this.emitStateChange();
         }
 
@@ -1061,9 +1067,38 @@
     }
 
     // ============================================================
+    // SCREEN WAKE LOCK
+    // ============================================================
+    const WakeLock = {
+        lock: null,
+        supported: 'wakeLock' in navigator,
+
+        async acquire() {
+            if (!this.supported || this.lock) return;
+            try {
+                this.lock = await navigator.wakeLock.request('screen');
+                console.log('[WakeLock] Acquired');
+                this.lock.addEventListener('release', () => {
+                    this.lock = null;
+                });
+            } catch (e) {
+                console.log('[WakeLock] Failed:', e.message);
+            }
+        },
+
+        release() {
+            if (this.lock) {
+                this.lock.release();
+                this.lock = null;
+                console.log('[WakeLock] Released');
+            }
+        }
+    };
+
+    // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260115f';
+    const BUILD_ID = '20260115g';
 
     // ============================================================
     // MAIN APPLICATION
