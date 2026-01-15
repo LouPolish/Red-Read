@@ -82,13 +82,16 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
-    height: 100dvh;
+html {
+    height: 100%;
     width: 100%;
     overflow: hidden;
 }
 
 body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
     font-family: var(--font-ui);
     background: var(--bg-primary);
     color: var(--text-primary);
@@ -99,11 +102,13 @@ body {
 }
 
 #app {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    width: 100%;
-    position: relative;
     overflow: hidden;
     box-sizing: border-box;
     /* Safe-area: top/left/right only - bottom handled by reader-controls */
@@ -117,9 +122,9 @@ body {
 .view {
     display: none;
     flex-direction: column;
-    height: 100%;
-    width: 100%;
     flex: 1;
+    min-height: 0; /* Allow flex shrinking */
+    width: 100%;
     overflow: hidden;
 }
 
