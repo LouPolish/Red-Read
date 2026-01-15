@@ -1679,28 +1679,31 @@
 
         // Normalize proxy text: filter Wikipedia/nav boilerplate, keep article prose
         normalizeProxyText(text, sourceUrl) {
-            // 1) Strip URLs and wiki links early (before they become glued tokens)
-            text = text.replace(/https?:\/\/[^\s\]\)]+/gi, '');
-            text = text.replace(/www\.[^\s\]\)]+/gi, '');
-            text = text.replace(/[a-z]{2,3}\.wikipedia\.org\/wiki\/[^\s\]\)]+/gi, '');
-            // Strip markdown link syntax leaving just the text: [text](url) -> text + space
-            text = text.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1 ');
+            // 1) Strip markdown link syntax leaving just the text: [text](url) -> text + space
+            // Only match if the (url) portion looks like a URL (starts with http, /, #, or contains . or /)
+            text = text.replace(/\[([^\]]*)\]\((https?:\/\/[^)]*|\/[^)]*|#[^)]*|[^)\s]*[./][^)]*)\)/g, '$1 ');
 
-            // 2) Clean up residual wiki path/slug artifacts after link conversion
-            // Remove /wiki/... paths that leaked through
-            text = text.replace(/\/wiki\/[^\s\]\)]+/gi, ' ');
-            // Remove wiki/... without leading slash
-            text = text.replace(/\bwiki\/[^\s\]\)]+/gi, ' ');
-            // Remove title=... query params
-            text = text.replace(/\btitle=[^\s&\]\)]+/gi, ' ');
-            // Remove slug disambiguators like _(film) or _(TV_series) attached to words
-            // These come from URL paths, not prose (prose would have space before paren)
-            text = text.replace(/_\([^)]+\)/g, ' ');
-            // Remove underscores that came from URL slugs (replace with space)
-            text = text.replace(/_/g, ' ');
-
-            // Collapse multiple spaces after all cleanup
-            text = text.replace(/  +/g, ' ');
+            // 2) Process line-by-line: only apply URL/slug cleanup on lines with URL markers
+            const urlMarkerPattern = /https?:|www\.|wikipedia\.org|\/wiki\/|wiki\/|title=/i;
+            const rawLines = text.split('\n');
+            const cleanedLines = rawLines.map(line => {
+                if (urlMarkerPattern.test(line)) {
+                    // This line has URL artifacts - apply aggressive cleanup
+                    line = line.replace(/https?:\/\/[^\s\]\)]+/gi, ' ');
+                    line = line.replace(/www\.[^\s\]\)]+/gi, ' ');
+                    line = line.replace(/[a-z]{2,3}\.wikipedia\.org\/wiki\/[^\s\]\)]+/gi, ' ');
+                    line = line.replace(/\/wiki\/[^\s\]\)]+/gi, ' ');
+                    line = line.replace(/\bwiki\/[^\s\]\)]+/gi, ' ');
+                    line = line.replace(/\btitle=[^\s&\]\)]+/gi, ' ');
+                    // Remove slug disambiguators like _(film) - underscore directly before paren
+                    line = line.replace(/_\([^)]+\)/g, ' ');
+                    // Convert underscores to spaces (URL slugs)
+                    line = line.replace(/_/g, ' ');
+                }
+                // Collapse multiple spaces
+                return line.replace(/  +/g, ' ').trim();
+            });
+            text = cleanedLines.join('\n');
 
             const lines = text.split('\n');
             const kept = [];
