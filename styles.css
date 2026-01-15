@@ -487,6 +487,7 @@ body {
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--bg-tertiary);
     flex: 0 0 auto;
+    transition: opacity 0.3s ease;
 }
 
 .reader-title {
@@ -1147,7 +1148,8 @@ body {
 }
 
 /* When dimmed (JS adds this class during playback idle) */
-.reader-controls.auto-dimmed {
+.reader-controls.auto-dimmed,
+.reader-header.auto-dimmed {
     opacity: 0.1;
     pointer-events: none;
 }

@@ -1098,7 +1098,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260115g';
+    const BUILD_ID = '20260115h';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1188,8 +1188,9 @@
             this.fullscreenBtn = document.getElementById('fullscreen-btn');
             this.iconExpand = document.getElementById('icon-expand');
             this.iconCollapse = document.getElementById('icon-collapse');
-            // Reader controls for auto-hide
+            // Reader controls and header for auto-hide
             this.readerControls = document.querySelector('.reader-controls');
+            this.readerHeader = document.querySelector('.reader-header');
             this.autoHideTimer = null;
             this.autoHideDelay = 2500; // 2.5 seconds
             // URL import elements
@@ -1944,12 +1945,13 @@
             if (state.isPlaying) {
                 this.resetAutoHideTimer();
             } else {
-                // Paused - clear timer and restore controls
+                // Paused - clear timer and restore controls/header
                 if (this.autoHideTimer) {
                     clearTimeout(this.autoHideTimer);
                     this.autoHideTimer = null;
                 }
                 this.readerControls?.classList.remove('auto-dimmed');
+                this.readerHeader?.classList.remove('auto-dimmed');
             }
         }
 
@@ -2438,10 +2440,11 @@
             this.iconCollapse.style.display = showCollapse ? 'block' : 'none';
         }
 
-        // Auto-hide controls during playback
+        // Auto-hide controls and header during playback
         resetAutoHideTimer() {
-            // Always restore controls visibility immediately
+            // Always restore visibility immediately
             this.readerControls?.classList.remove('auto-dimmed');
+            this.readerHeader?.classList.remove('auto-dimmed');
 
             // Clear any existing timer
             if (this.autoHideTimer) {
@@ -2461,6 +2464,7 @@
             // Only dim if still playing and no overlays open
             if (this.playback?.isPlaying && !this.isAnyOverlayOpen()) {
                 this.readerControls?.classList.add('auto-dimmed');
+                this.readerHeader?.classList.add('auto-dimmed');
             }
         }
 
