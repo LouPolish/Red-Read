@@ -1,5 +1,5 @@
 /**
- * Speed Reader - Main Application
+ * Red Read - Main Application
  * RSVP Reader with gesture-based controls
  */
 

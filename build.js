@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build script for Speed Reader PWA
+ * Build script for Red Read PWA
  * Copies all necessary files to dist/ for static deployment
  *
  * Usage: node build.js
@@ -124,7 +124,7 @@ function createRedirects() {
 
 // Main build function
 function build() {
-    console.log('Building Speed Reader PWA...\n');
+    console.log('Building Red Read PWA...\n');
 
     cleanDist();
 

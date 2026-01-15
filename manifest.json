@@ -1,6 +1,6 @@
 {
-    "name": "Speed Reader",
-    "short_name": "SpeedRead",
+    "name": "Red Read",
+    "short_name": "Red Read",
     "description": "RSVP speed reading app with ORP-anchored word display",
     "start_url": ".",
     "scope": ".",

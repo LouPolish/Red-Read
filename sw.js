@@ -1,5 +1,5 @@
 /**
- * Speed Reader Service Worker
+ * Red Read Service Worker
  * Caches app shell for offline use. Document content is stored in IndexedDB.
  */
 
