@@ -1063,7 +1063,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260115b';
+    const BUILD_ID = '20260115e';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1688,19 +1688,35 @@
 
         // Normalize proxy text: filter Wikipedia/nav boilerplate, keep article prose
         normalizeProxyText(text, sourceUrl) {
-            // 1) Strip markdown link syntax: [text](url) -> text + space
-            // Only match URLs that start with http, https, /, or # (not prose parens like "(born 1958)")
-            text = text.replace(/\[([^\]]*)\]\((https?:\/\/[^)]+|\/[^)]+|#[^)]*)\)/g, '$1 ');
+            // DEBUG: Log raw input (first 2000 chars)
+            console.log('[normalizeProxyText] RAW INPUT:', text.substring(0, 2000));
 
-            // 2) Strip any remaining bare URLs
+            // 0) Remove entire lines that are TOC entries (start with * and contain wiki anchor links)
+            // These look like: *   [1 Early life](https://en.wikipedia.org/wiki/...#section)
+            text = text.replace(/^\s*\*\s*\[.*\]\(https?:\/\/[^)]*#[^)]*\).*$/gm, '');
+
+            // 0b) Remove lines that are just "Contents", "move to sidebar hide", "Toggle X subsection"
+            text = text.replace(/^-+$/gm, ''); // horizontal rules
+            text = text.replace(/^\s*(Contents|move to sidebar hide|Toggle.*subsection)\s*$/gim, '');
+
+            // 1) Strip markdown link syntax: [text](url) -> text + space
+            // Match [text](...) where ... contains URL-like chars (no spaces, has / or . or :)
+            // This avoids matching prose like "word (born 1958)" which has spaces in parens
+            text = text.replace(/\[([^\]]*)\]\(([^)\s]*[/:.])[^)]*\)/g, '$1 ');
+
+            // 2) Also catch any remaining [...](something) patterns - but only if no space in parens
+            text = text.replace(/\[([^\]]*)\]\([^)\s]+\)/g, '$1 ');
+
+            // 3) Strip any remaining bare URLs
             text = text.replace(/https?:\/\/[^\s\])<]+/gi, ' ');
             text = text.replace(/www\.[^\s\])<]+/gi, ' ');
 
-            // 3) Strip wiki path fragments that leaked through
+            // 4) Strip wiki path fragments that leaked through
             text = text.replace(/\/wiki\/[^\s\])<]+/gi, ' ');
 
-            // 4) Collapse multiple spaces
+            // 5) Collapse multiple spaces and blank lines
             text = text.replace(/  +/g, ' ');
+            text = text.replace(/\n{3,}/g, '\n\n');
 
             const lines = text.split('\n');
             const kept = [];
@@ -1801,6 +1817,9 @@
             // Clean up any remaining empty brackets or double spaces
             result = result.replace(/\[\s*\]/g, '');
             result = result.replace(/\s{2,}/g, ' ');
+
+            // DEBUG: Log normalized output (first 2000 chars)
+            console.log('[normalizeProxyText] NORMALIZED OUTPUT:', result.substring(0, 2000));
 
             return result.trim();
         }
