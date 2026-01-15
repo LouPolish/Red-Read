@@ -466,14 +466,13 @@ body {
     padding: 16px 20px;
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 16px;
 }
 
 .version-label {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-muted);
-    opacity: 0.5;
+    opacity: 0.4;
+    margin-top: 4px;
 }
 
 /* ============================================

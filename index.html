@@ -18,6 +18,7 @@
             <header class="library-header">
                 <h1>Red Read</h1>
                 <p class="subtitle">RSVP Reading Engine</p>
+                <span id="version-label" class="version-label"></span>
             </header>
 
             <div class="import-section">
@@ -66,7 +67,6 @@
             </div>
 
             <footer class="library-footer">
-                <span id="version-label" class="version-label"></span>
                 <button id="settings-btn" class="icon-button" aria-label="Settings">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
@@ -1063,7 +1063,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260115a';
+    const BUILD_ID = '20260115b';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1688,31 +1688,19 @@
 
         // Normalize proxy text: filter Wikipedia/nav boilerplate, keep article prose
         normalizeProxyText(text, sourceUrl) {
-            // 1) Strip markdown link syntax leaving just the text: [text](url) -> text + space
-            // Only match if the (url) portion looks like a URL (starts with http, /, #, or contains . or /)
-            text = text.replace(/\[([^\]]*)\]\((https?:\/\/[^)]*|\/[^)]*|#[^)]*|[^)\s]*[./][^)]*)\)/g, '$1 ');
+            // 1) Strip markdown link syntax: [text](url) -> text + space
+            // Only match URLs that start with http, https, /, or # (not prose parens like "(born 1958)")
+            text = text.replace(/\[([^\]]*)\]\((https?:\/\/[^)]+|\/[^)]+|#[^)]*)\)/g, '$1 ');
 
-            // 2) Process line-by-line: only apply URL/slug cleanup on lines with URL markers
-            const urlMarkerPattern = /https?:|www\.|wikipedia\.org|\/wiki\/|wiki\/|title=/i;
-            const rawLines = text.split('\n');
-            const cleanedLines = rawLines.map(line => {
-                if (urlMarkerPattern.test(line)) {
-                    // This line has URL artifacts - apply aggressive cleanup
-                    line = line.replace(/https?:\/\/[^\s\]\)]+/gi, ' ');
-                    line = line.replace(/www\.[^\s\]\)]+/gi, ' ');
-                    line = line.replace(/[a-z]{2,3}\.wikipedia\.org\/wiki\/[^\s\]\)]+/gi, ' ');
-                    line = line.replace(/\/wiki\/[^\s\]\)]+/gi, ' ');
-                    line = line.replace(/\bwiki\/[^\s\]\)]+/gi, ' ');
-                    line = line.replace(/\btitle=[^\s&\]\)]+/gi, ' ');
-                    // Remove slug disambiguators like _(film) - underscore directly before paren
-                    line = line.replace(/_\([^)]+\)/g, ' ');
-                    // Convert underscores to spaces (URL slugs)
-                    line = line.replace(/_/g, ' ');
-                }
-                // Collapse multiple spaces
-                return line.replace(/  +/g, ' ').trim();
-            });
-            text = cleanedLines.join('\n');
+            // 2) Strip any remaining bare URLs
+            text = text.replace(/https?:\/\/[^\s\])<]+/gi, ' ');
+            text = text.replace(/www\.[^\s\])<]+/gi, ' ');
+
+            // 3) Strip wiki path fragments that leaked through
+            text = text.replace(/\/wiki\/[^\s\])<]+/gi, ' ');
+
+            // 4) Collapse multiple spaces
+            text = text.replace(/  +/g, ' ');
 
             const lines = text.split('\n');
             const kept = [];
