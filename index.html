@@ -66,6 +66,7 @@
             </div>
 
             <footer class="library-footer">
+                <span id="version-label" class="version-label"></span>
                 <button id="settings-btn" class="icon-button" aria-label="Settings">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
@@ -1060,6 +1061,11 @@
     }
 
     // ============================================================
+    // BUILD VERSION
+    // ============================================================
+    const BUILD_ID = '20260115a';
+
+    // ============================================================
     // MAIN APPLICATION
     // ============================================================
 
@@ -1081,7 +1087,10 @@
             this.loadSettings();
             this.loadLibrary();
 
-            console.log('Red Read initialized');
+            console.log('Red Read build:', BUILD_ID);
+            // Display version in library footer
+            const versionLabel = document.getElementById('version-label');
+            if (versionLabel) versionLabel.textContent = 'v' + BUILD_ID;
         }
 
         initElements() {
@@ -2432,6 +2441,16 @@
 
     // Register Service Worker for PWA/offline support
     if ('serviceWorker' in navigator) {
+        let refreshing = false;
+        // Auto-reload when new SW takes control
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+                refreshing = true;
+                console.log('New version activated, reloading...');
+                window.location.reload();
+            }
+        });
+
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/sw.js')
                 .then(registration => {
@@ -2441,11 +2460,17 @@
                         const newWorker = registration.installing;
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New version available
-                                console.log('New version available');
+                                // New version available, tell it to activate
+                                console.log('New version available, activating...');
+                                newWorker.postMessage('skipWaiting');
                             }
                         });
                     });
+                    // Check for waiting SW on page load (in case update happened while tab was closed)
+                    if (registration.waiting) {
+                        console.log('Update waiting, activating...');
+                        registration.waiting.postMessage('skipWaiting');
+                    }
                 })
                 .catch(err => console.log('SW registration failed:', err));
         });
