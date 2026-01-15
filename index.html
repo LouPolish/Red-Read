@@ -568,6 +568,8 @@
 
     function tokenize(text, mode = 'reading') {
         const tokens = [];
+        // Normalize dashes to spaces so they act as word boundaries (e.g., "faster—we're" → "faster we're")
+        text = text.replace(/[\u2013\u2014\u2015\-]/g, ' ');
         const paragraphs = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
 
         for (const paragraph of paragraphs) {
