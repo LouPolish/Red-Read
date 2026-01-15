@@ -106,8 +106,8 @@ body {
     position: relative;
     overflow: hidden;
     box-sizing: border-box;
-    /* Safe-area protection for iPhone notch/home indicator */
-    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    /* Safe-area: top/left/right only - bottom handled by reader-controls */
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0px env(safe-area-inset-left, 0px);
 }
 
 /* ============================================
@@ -612,14 +612,13 @@ body {
     background: var(--bg-secondary);
     border-top: 1px solid var(--bg-tertiary);
     padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     flex: 0 0 auto;
 }
 
-/* Safe-area spacer - only takes up space for iPhone home indicator */
+/* Safe-area spacer - disabled, reader-controls handles bottom safe-area */
 .safe-area-spacer {
-    height: env(safe-area-inset-bottom, 0px);
-    background: var(--bg-secondary);
-    flex: 0 0 auto;
+    display: none;
 }
 
 .progress-row {
