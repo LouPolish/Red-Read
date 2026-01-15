@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        canvas { border: 1px solid #333; margin: 10px; }
+        a { color: #c41e3a; display: block; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Right-click each canvas and "Save image as..." to create the icons.</p>
+
+    <h2>192x192</h2>
+    <canvas id="icon192" width="192" height="192"></canvas>
+    <a id="link192" download="icon-192.png">Download 192x192</a>
+
+    <h2>512x512</h2>
+    <canvas id="icon512" width="512" height="512"></canvas>
+    <a id="link512" download="icon-512.png">Download 512x512</a>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            const scale = size / 192;
+
+            // Background
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, size, size);
+
+            // Rounded corners mask (for visual preview)
+            const radius = 32 * scale;
+
+            // Letter "Sp" with red pivot
+            ctx.font = `bold ${72 * scale}px Georgia, serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // White "S"
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('Sp', size / 2, size / 2);
+
+            // Red highlight on "p" pivot
+            ctx.fillStyle = '#c41e3a';
+            const metrics = ctx.measureText('S');
+            const sWidth = metrics.width;
+            ctx.fillText('p', size / 2 + sWidth * 0.15, size / 2);
+
+            // Horizontal guide lines
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1 * scale;
+            ctx.beginPath();
+            ctx.moveTo(20 * scale, size / 2 - 30 * scale);
+            ctx.lineTo(size - 20 * scale, size / 2 - 30 * scale);
+            ctx.moveTo(20 * scale, size / 2 + 35 * scale);
+            ctx.lineTo(size - 20 * scale, size / 2 + 35 * scale);
+            ctx.stroke();
+
+            // Vertical pivot line
+            ctx.strokeStyle = '#c41e3a';
+            ctx.lineWidth = 2 * scale;
+            ctx.beginPath();
+            ctx.moveTo(size / 2, size / 2 - 50 * scale);
+            ctx.lineTo(size / 2, size / 2 - 35 * scale);
+            ctx.stroke();
+        }
+
+        const canvas192 = document.getElementById('icon192');
+        const canvas512 = document.getElementById('icon512');
+
+        drawIcon(canvas192, 192);
+        drawIcon(canvas512, 512);
+
+        // Create download links
+        document.getElementById('link192').href = canvas192.toDataURL('image/png');
+        document.getElementById('link512').href = canvas512.toDataURL('image/png');
+    </script>
+</body>
+</html>

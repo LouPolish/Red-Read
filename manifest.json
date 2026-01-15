@@ -1,0 +1,43 @@
+{
+    "name": "Speed Reader",
+    "short_name": "SpeedRead",
+    "description": "RSVP speed reading app with ORP-anchored word display",
+    "start_url": ".",
+    "scope": ".",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "categories": ["books", "education", "productivity"],
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
+    "handle_links": "preferred",
+    "prefer_related_applications": false
+}

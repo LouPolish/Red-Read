@@ -1,0 +1,1286 @@
+/* ============================================
+   Speed Reader - Responsive RSVP Reader
+   iPhone → iPad → Desktop
+   ============================================ */
+
+/* ============================================
+   @font-face declarations for RSVP fonts
+   ============================================ */
+
+@font-face {
+    font-family: 'Atkinson Hyperlegible';
+    src: url('fonts/AtkinsonHyperlegible-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'EB Garamond';
+    src: url('fonts/eb-garamond-v7-latin-regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Lexend';
+    src: url('fonts/Lexend-VariableFont_wght.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('fonts/Noto-Sans-regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    /* Colors */
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-tertiary: #111111;
+    --bg-elevated: #1a1a1a;
+
+    --text-primary: #ffffff;
+    --text-secondary: #888888;
+    --text-muted: #555555;
+
+    --accent: #c41e3a;
+    --accent-hover: #d62e4a;
+
+    --guide-color: #333333;
+
+    /* Typography */
+    --font-display: 'Georgia', 'Times New Roman', serif;
+    --font-ui: 'Lexend', system-ui, sans-serif;
+    --rsvp-word-font: 'Lexend'; /* RSVP word font - changed via settings */
+
+    /* Spacing */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+
+    /* Reader */
+    --word-font-size: 48px;
+    --rsvp-scale: 1;
+}
+
+/* ============================================
+   Reset & Base
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    min-height: 100dvh;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    overflow-x: hidden;
+}
+
+body {
+    font-family: var(--font-ui);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+    /* Safe-area protection for iPhone notch/home indicator */
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+/* ============================================
+   Views
+   ============================================ */
+
+.view {
+    display: none;
+    flex-direction: column;
+    min-height: 100dvh;
+    width: 100%;
+    flex: 1;
+}
+
+.view.active {
+    display: flex;
+}
+
+/* ============================================
+   Library View
+   ============================================ */
+
+.library-header {
+    padding: 24px 20px 16px;
+    text-align: center;
+}
+
+.library-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+.library-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.import-section {
+    padding: 20px;
+}
+
+.import-button {
+    width: 100%;
+    padding: 32px 24px;
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--guide-color);
+    border-radius: 16px;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+}
+
+.import-button:hover,
+.import-button:active {
+    border-color: var(--accent);
+    background: rgba(196, 30, 58, 0.1);
+}
+
+.import-icon {
+    width: 48px;
+    height: 48px;
+    stroke: var(--accent);
+}
+
+.import-button span {
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.import-hint {
+    font-size: 13px !important;
+    color: var(--text-muted) !important;
+    font-weight: 400 !important;
+}
+
+#file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.recent-section {
+    flex: 1;
+    padding: 0 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.recent-section h2 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.empty-state {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.recent-item {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.recent-item:hover,
+.recent-item:active {
+    background: var(--bg-elevated);
+}
+
+.recent-item-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.recent-item-title {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-delete {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+    background: transparent;
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.btn-delete svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-delete:hover,
+.btn-delete:active {
+    background: var(--accent);
+    color: white;
+}
+
+.recent-item-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.recent-item-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.progress-bar-bg {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-elevated);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s;
+}
+
+.recent-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.recent-item-actions button {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-resume {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-restart {
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+}
+
+.library-footer {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* ============================================
+   Reader View
+   ============================================ */
+
+.reader-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    flex: 0 0 auto;
+}
+
+.reader-title {
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* RSVP Display */
+.rsvp-display {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: var(--bg-primary);
+    min-height: 0; /* Allow flex shrinking */
+    overflow: hidden;
+}
+
+/* Guide container */
+.focus-guides {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+/* All guide elements: same neutral gray, no red */
+.guide-horizontal,
+.guide-tick {
+    position: absolute;
+    background: var(--guide-color);
+    opacity: 0.5;
+}
+
+.word-container {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    font-family: var(--rsvp-word-font), 'Lexend', system-ui, sans-serif;
+    font-size: calc(var(--word-font-size) * var(--rsvp-scale));
+    font-weight: 400; /* Normal weight for variable fonts like Lexend */
+    line-height: 1;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    /* Give container explicit height so translateY(-50%) actually centers it */
+    height: 1em; /* 1em = current font-size, matches line-height: 1 */
+}
+
+/* Pivot is pinned at exact stage center */
+#word-pivot {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* Left part: right-aligned, ends at pivot's left edge */
+/* Transform set by JS: translateX(-pivotWidth/2) */
+#word-before {
+    position: absolute;
+    right: 50%;
+    text-align: right;
+    color: var(--text-primary);
+}
+
+/* Right part: left-aligned, starts at pivot's right edge */
+/* Transform set by JS: translateX(pivotWidth/2) */
+#word-after {
+    position: absolute;
+    left: 50%;
+    text-align: left;
+    color: var(--text-primary);
+}
+
+
+/* Tap Zones (mobile gesture areas) */
+.tap-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+}
+
+.tap-zone-left {
+    left: 0;
+    width: 25%;
+}
+
+.tap-zone-center {
+    left: 25%;
+    width: 50%;
+}
+
+.tap-zone-right {
+    right: 0;
+    width: 25%;
+}
+
+/* Tuning Overlay (long-press activated) */
+.tuning-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 20;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    min-width: 260px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.tuning-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tuning-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tuning-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tuning-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.tuning-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;
+    height: 24px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.tuning-slider::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+}
+
+.tuning-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.tuning-value {
+    font-size: 18px;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.tuning-action-btn {
+    margin-top: 8px;
+    padding: 12px 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.tuning-action-btn:hover {
+    background: #d42a47;
+}
+
+.tuning-action-btn:active {
+    transform: scale(0.98);
+}
+
+/* Jump Indicator */
+.jump-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+    z-index: 15;
+}
+
+.jump-indicator.visible {
+    opacity: 1;
+}
+
+/* Resume Prompt (iOS visibility change) */
+.resume-prompt {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    z-index: 25;
+    cursor: pointer;
+}
+
+.resume-prompt.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.resume-prompt span {
+    font-size: 20px;
+    color: var(--text-primary);
+    padding: 16px 32px;
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    border: 1px solid var(--accent);
+}
+
+/* Reader Controls */
+.reader-controls {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--bg-tertiary);
+    padding: 16px;
+    flex: 0 0 auto;
+}
+
+.progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.progress-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-width: 48px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-slider {
+    flex: 1;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.progress-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.progress-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.playback-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Fullscreen toggle row - small button bottom-right */
+.fullscreen-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.fullscreen-button {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.fullscreen-button:hover,
+.fullscreen-button:active {
+    opacity: 1;
+}
+
+.fullscreen-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+.control-button {
+    width: 48px;
+    height: 48px;
+    background: var(--bg-elevated);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.control-button:hover,
+.control-button:active {
+    background: var(--bg-tertiary);
+}
+
+.control-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+.play-button {
+    width: 64px;
+    height: 64px;
+    background: var(--accent);
+}
+
+.play-button:hover,
+.play-button:active {
+    background: var(--accent-hover);
+}
+
+.play-button svg {
+    width: 32px;
+    height: 32px;
+}
+
+.wpm-button {
+    width: auto;
+    padding: 0 16px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Icon Button */
+.icon-button {
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-button:hover,
+.icon-button:active {
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+}
+
+.icon-button svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* ============================================
+   Settings Panel
+   ============================================ */
+
+.settings-panel {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+}
+
+.settings-panel.open {
+    display: flex;
+}
+
+.settings-content {
+    width: 100%;
+    max-height: 85vh;
+    background: var(--bg-secondary);
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    padding-bottom: calc(24px + var(--safe-area-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.settings-header h2 {
+    font-size: 20px;
+}
+
+.setting-group {
+    margin-bottom: 24px;
+}
+
+.setting-label {
+    display: block;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.setting-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+.toggle-group {
+    display: flex;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.toggle-btn.active {
+    background: var(--accent);
+    color: white;
+}
+
+.setting-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--bg-elevated);
+    border-radius: 3px;
+}
+
+.setting-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.setting-value {
+    display: block;
+    text-align: center;
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.setting-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 16px;
+}
+
+.setting-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.setting-select {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 16px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+.setting-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.danger-zone {
+    padding-top: 24px;
+    border-top: 1px solid var(--bg-tertiary);
+    margin-top: 24px;
+}
+
+.danger-button {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid #c41e3a;
+    border-radius: 8px;
+    color: #c41e3a;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* ============================================
+   Loading Overlay
+   ============================================ */
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--bg-elevated);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#loading-text {
+    margin-top: 16px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   Flow Mode (Distraction-Free)
+   ============================================ */
+
+.flow-mode .reader-header,
+.flow-mode .reader-controls {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.flow-mode:hover .reader-header,
+.flow-mode:hover .reader-controls,
+.flow-mode:active .reader-header,
+.flow-mode:active .reader-controls {
+    opacity: 1;
+}
+
+/* ============================================
+   Focus Mode (Fullscreen/Immersive)
+   ============================================ */
+
+/* In focus mode, hide header completely */
+.focus-mode .reader-header {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+/* ============================================
+   Auto-hide Controls (during playback)
+   ============================================ */
+
+/* Controls bar with transition for auto-hide */
+.reader-controls {
+    transition: opacity 0.3s ease;
+}
+
+/* When dimmed (JS adds this class during playback idle) */
+.reader-controls.auto-dimmed {
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+/* Hide guides when setting is off */
+.hide-guides .focus-guides {
+    display: none;
+}
+
+/* ============================================
+   Responsive Breakpoints
+   ============================================ */
+
+/* iPhone SE / Small phones */
+@media (max-width: 375px) {
+    :root {
+        --word-font-size: 36px;
+    }
+
+    .control-button {
+        width: 44px;
+        height: 44px;
+    }
+
+    .play-button {
+        width: 56px;
+        height: 56px;
+    }
+
+    .wpm-button {
+        padding: 0 12px;
+        font-size: 12px;
+    }
+}
+
+/* Standard phones */
+@media (min-width: 376px) and (max-width: 428px) {
+    :root {
+        --word-font-size: 42px;
+    }
+}
+
+/* Large phones / Small tablets */
+@media (min-width: 429px) and (max-width: 768px) {
+    :root {
+        --word-font-size: 48px;
+    }
+}
+
+/* iPad / Tablets */
+@media (min-width: 769px) {
+    :root {
+        --word-font-size: 56px;
+    }
+
+    /* Library view can be constrained, reader should not */
+    #library-view {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .control-button {
+        width: 56px;
+        height: 56px;
+    }
+
+    .play-button {
+        width: 72px;
+        height: 72px;
+    }
+
+    .settings-content {
+        max-width: 500px;
+        margin: 0 auto;
+        border-radius: 24px;
+        margin-bottom: 40px;
+    }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    :root {
+        --word-font-size: 64px;
+    }
+
+    #library-view {
+        max-width: 700px;
+    }
+
+    /* Hide tap zones on desktop */
+    .tap-zone {
+        display: none;
+    }
+}
+
+/* ============================================
+   Dark mode (already dark, but for system)
+   ============================================ */
+
+@media (prefers-color-scheme: light) {
+    /* Keep dark theme regardless of system preference
+       This is a reading app - dark is better */
+}
+
+/* ============================================
+   Reduced motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ============================================
+   Quick Adjust Overlay
+   ============================================ */
+
+.quick-adjust-button {
+    opacity: 0.6;
+}
+
+.quick-adjust-button.active {
+    opacity: 1;
+    color: var(--accent);
+}
+
+.quick-adjust-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    /* No background - sliders float without blocking word view */
+}
+
+.quick-adjust-overlay.hidden {
+    opacity: 0;
+    pointer-events: none !important;
+}
+
+.quick-adjust-overlay.hidden * {
+    pointer-events: none !important;
+}
+
+.quick-slider-container {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Font size slider - vertical via rotate (consistent styling on iOS) */
+.quick-slider-font {
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 12px;
+    /* Container needs space for rotated slider */
+    width: 56px;
+    height: 180px;
+    position: absolute;
+}
+
+/* Label positioned at bottom of container, outside the centering flow */
+.quick-slider-font .quick-slider-label {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.quick-slider-font .quick-slider {
+    /* Use rotate instead of native vertical for consistent styling */
+    /* rotate(-90deg) counter-clockwise: left (min) goes to top, right (max) goes to bottom */
+    /* Then we flip values in JS so: up = larger font, down = smaller font */
+    width: 140px;
+    height: 32px;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* WPM slider - horizontal, lower right */
+.quick-slider-wpm {
+    right: 16px;
+    bottom: 20px;
+    flex-direction: row;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.quick-slider-wpm .quick-slider {
+    width: 120px;
+    height: 32px;
+}
+
+.quick-slider-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Quick slider base - instrumental, subtle styling */
+.quick-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    /* Generous padding for touch targets */
+    padding: 8px 0;
+}
+
+/* Track color matches guide lines */
+:root {
+    --quick-slider-track: rgba(255, 255, 255, 0.15);
+    --quick-slider-thumb-size: clamp(18px, 4vw, 24px);
+    --quick-slider-track-size: clamp(4px, 1vw, 6px);
+}
+
+/* WebKit (Chrome/Safari) - Horizontal track */
+.quick-slider.horizontal::-webkit-slider-runnable-track {
+    height: var(--quick-slider-track-size);
+    background: var(--quick-slider-track);
+    border-radius: 3px;
+    border: none;
+}
+
+/* WebKit - Horizontal thumb */
+.quick-slider.horizontal::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--quick-slider-thumb-size);
+    height: var(--quick-slider-thumb-size);
+    background: var(--accent);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    margin-top: calc((var(--quick-slider-track-size) - var(--quick-slider-thumb-size)) / 2);
+}
+
+/* Firefox - Horizontal track */
+.quick-slider.horizontal::-moz-range-track {
+    height: var(--quick-slider-track-size);
+    background: var(--quick-slider-track);
+    border-radius: 3px;
+    border: none;
+}
+
+/* Firefox - Horizontal thumb */
+.quick-slider.horizontal::-moz-range-thumb {
+    width: var(--quick-slider-thumb-size);
+    height: var(--quick-slider-thumb-size);
+    background: var(--accent);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+/* Firefox - Horizontal progress (match track, no fill color) */
+.quick-slider.horizontal::-moz-range-progress {
+    background: var(--quick-slider-track);
+    border-radius: 3px;
+}

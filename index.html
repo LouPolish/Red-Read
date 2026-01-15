@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>Speed Reader</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Library View -->
+        <div id="library-view" class="view active">
+            <header class="library-header">
+                <h1>Speed Reader</h1>
+                <p class="subtitle">RSVP Reading Engine</p>
+            </header>
+
+            <div class="import-section">
+                <div id="drop-zone" class="import-button">
+                    <svg class="import-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>Import File</span>
+                    <span class="import-hint">EPUB, PDF, TXT, HTML — tap or drop</span>
+                </div>
+                <input type="file" id="file-input" accept=".epub,.pdf,.txt,.html,.htm">
+            </div>
+
+            <div class="recent-section">
+                <h2>Recent</h2>
+                <div id="recent-list" class="recent-list">
+                    <p class="empty-state">No documents yet</p>
+                </div>
+            </div>
+
+            <footer class="library-footer">
+                <button id="settings-btn" class="icon-button" aria-label="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                    </svg>
+                </button>
+            </footer>
+        </div>
+
+        <!-- Reader View -->
+        <div id="reader-view" class="view">
+            <header class="reader-header">
+                <button id="back-btn" class="icon-button" aria-label="Back to library">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
+                <div class="reader-title">
+                    <span id="doc-title">Document</span>
+                </div>
+                <button id="reader-settings-btn" class="icon-button" aria-label="Reader settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="4" y1="21" x2="4" y2="14"/>
+                        <line x1="4" y1="10" x2="4" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12" y2="3"/>
+                        <line x1="20" y1="21" x2="20" y2="16"/>
+                        <line x1="20" y1="12" x2="20" y2="3"/>
+                        <line x1="1" y1="14" x2="7" y2="14"/>
+                        <line x1="9" y1="8" x2="15" y2="8"/>
+                        <line x1="17" y1="16" x2="23" y2="16"/>
+                    </svg>
+                </button>
+            </header>
+
+            <!-- RSVP Display -->
+            <div id="rsvp-display" class="rsvp-display">
+                <div class="focus-guides" id="focus-guides">
+                    <!-- Two continuous horizontal lines -->
+                    <div class="guide-horizontal" id="guide-top"></div>
+                    <div class="guide-horizontal" id="guide-bottom"></div>
+                    <!-- Two short vertical ticks pointing inward from the horizontals -->
+                    <div class="guide-tick" id="guide-tick-top"></div>
+                    <div class="guide-tick" id="guide-tick-bottom"></div>
+                </div>
+                <div class="word-container">
+                    <span id="word-before" class="word-part"></span><span id="word-pivot" class="word-pivot"></span><span id="word-after" class="word-part"></span>
+                </div>
+                <!-- Tuning Overlay (long-press activated) -->
+                <div class="tuning-overlay" id="tuning-overlay">
+                    <div class="tuning-control">
+                        <label class="tuning-label">Speed</label>
+                        <input type="range" id="tuning-wpm-slider" class="tuning-slider" min="100" max="900" step="10" value="300">
+                        <span class="tuning-value" id="tuning-wpm-value">300 wpm</span>
+                    </div>
+                    <div class="tuning-control">
+                        <label class="tuning-label">Size</label>
+                        <input type="range" id="tuning-scale-slider" class="tuning-slider" min="0.5" max="1.8" step="0.05" value="1">
+                        <span class="tuning-value" id="tuning-scale-value">1.0×</span>
+                    </div>
+                    <button id="skip-to-content-btn" class="tuning-action-btn" style="display: none;">
+                        Skip to Content
+                    </button>
+                </div>
+                <!-- Quick Adjust Overlay (toggle button activated) -->
+                <div id="quick-adjust-overlay" class="quick-adjust-overlay hidden">
+                    <!-- Font size slider (vertical, left side) -->
+                    <div class="quick-slider-container quick-slider-font">
+                        <input type="range" id="quick-font-slider" class="quick-slider horizontal" min="25" max="150" step="25" value="50">
+                        <span class="quick-slider-label" id="quick-font-label">50px</span>
+                    </div>
+                    <!-- WPM slider (horizontal, lower right) -->
+                    <div class="quick-slider-container quick-slider-wpm">
+                        <span class="quick-slider-label" id="quick-wpm-label">300</span>
+                        <input type="range" id="quick-wpm-slider" class="quick-slider horizontal" min="100" max="900" step="25" value="300">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="reader-controls">
+                <div class="progress-row">
+                    <span id="progress-current" class="progress-text">0</span>
+                    <input type="range" id="progress-slider" class="progress-slider" min="0" max="100" value="0">
+                    <span id="progress-total" class="progress-text">0</span>
+                </div>
+
+                <div class="playback-row">
+                    <button id="rewind-btn" class="control-button" aria-label="Rewind 10 words">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.5 3C17.15 3 21.08 6.03 22.47 10.22L20.1 11C19.05 7.81 16.04 5.5 12.5 5.5C10.54 5.5 8.77 6.22 7.38 7.38L10 10H3V3L5.6 5.6C7.45 4 9.85 3 12.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.11 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
+                        </svg>
+                    </button>
+                    <button id="prev-btn" class="control-button" aria-label="Previous word">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                        </svg>
+                    </button>
+                    <button id="play-btn" class="control-button play-button" aria-label="Play/Pause">
+                        <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+                            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                        </svg>
+                    </button>
+                    <button id="next-btn" class="control-button" aria-label="Next word">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                        </svg>
+                    </button>
+                    <button id="quick-adjust-btn" class="control-button quick-adjust-button" aria-label="Quick adjust">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="fullscreen-row">
+                    <button id="fullscreen-btn" class="fullscreen-button" aria-label="Toggle fullscreen">
+                        <!-- Expand icon (open square corners) -->
+                        <svg id="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 3 21 3 21 9"/>
+                            <polyline points="9 21 3 21 3 15"/>
+                            <polyline points="21 15 21 21 15 21"/>
+                            <polyline points="3 9 3 3 9 3"/>
+                        </svg>
+                        <!-- Collapse icon (inward corners) -->
+                        <svg id="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+                            <polyline points="4 14 10 14 10 20"/>
+                            <polyline points="20 10 14 10 14 4"/>
+                            <polyline points="14 20 14 14 20 14"/>
+                            <polyline points="10 4 10 10 4 10"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="settings-panel">
+            <div class="settings-content">
+                <header class="settings-header">
+                    <h2>Settings</h2>
+                    <button id="close-settings" class="icon-button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </header>
+
+                <div class="setting-group">
+                    <label class="setting-label">Reading Mode</label>
+                    <div class="toggle-group">
+                        <button class="toggle-btn active" data-mode="reading">Reading</button>
+                        <button class="toggle-btn" data-mode="skim">Skim</button>
+                    </div>
+                    <p class="setting-hint">Reading mode pauses longer on punctuation. Skim mode prioritizes speed.</p>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Font Size</label>
+                    <input type="range" id="font-size-setting" class="setting-slider" min="24" max="160" value="48">
+                    <span id="font-size-label" class="setting-value">48px</span>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Reader Word Font</label>
+                    <select id="font-family-setting" class="setting-select">
+                        <option value="'Lexend'" selected>Lexend</option>
+                        <option value="'Atkinson Hyperlegible'">Atkinson Hyperlegible</option>
+                        <option value="'Noto Sans'">Noto Sans</option>
+                        <option value="'EB Garamond'">EB Garamond</option>
+                    </select>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Default WPM</label>
+                    <input type="number" id="default-wpm-setting" class="setting-input" min="50" max="2000" step="50" value="300">
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">
+                        <input type="checkbox" id="show-guides-setting" checked>
+                        Show Focus Guides
+                    </label>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">
+                        <input type="checkbox" id="flow-mode-setting">
+                        Flow Mode (minimal UI)
+                    </label>
+                </div>
+
+                <div class="setting-group danger-zone">
+                    <button id="clear-library-btn" class="danger-button">Clear Library</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p id="loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- Inline App (no modules for file:// compatibility) -->
+    <script>
+    // ============================================================
+    // PERSISTENCE LAYER
+    // ============================================================
+
+    const DB_NAME = 'speed-reader-db';
+    const DB_VERSION = 1;
+
+    class PersistenceLayer {
+        constructor() {
+            this.db = null;
+            this.ready = this.init();
+        }
+
+        async init() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    this.db = request.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('library')) {
+                        const libraryStore = db.createObjectStore('library', { keyPath: 'id' });
+                        libraryStore.createIndex('lastOpened', 'lastOpened', { unique: false });
+                    }
+                    if (!db.objectStoreNames.contains('tokens')) {
+                        db.createObjectStore('tokens', { keyPath: 'docId' });
+                    }
+                    if (!db.objectStoreNames.contains('settings')) {
+                        db.createObjectStore('settings', { keyPath: 'key' });
+                    }
+                };
+            });
+        }
+
+        async saveDocument(doc) {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('library', 'readwrite');
+                const request = tx.objectStore('library').put(doc);
+                request.onsuccess = () => resolve(doc);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getDocument(id) {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('library', 'readonly');
+                const request = tx.objectStore('library').get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getRecentDocuments(limit = 20) {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('library', 'readonly');
+                const index = tx.objectStore('library').index('lastOpened');
+                const request = index.openCursor(null, 'prev');
+                const results = [];
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor && results.length < limit) {
+                        results.push(cursor.value);
+                        cursor.continue();
+                    } else {
+                        resolve(results);
+                    }
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async deleteDocument(id) {
+            await this.ready;
+            const tx = this.db.transaction(['library', 'tokens'], 'readwrite');
+            return new Promise((resolve, reject) => {
+                tx.objectStore('library').delete(id);
+                tx.objectStore('tokens').delete(id);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async updateProgress(docId, progress) {
+            await this.ready;
+            const doc = await this.getDocument(docId);
+            if (!doc) return null;
+            doc.progress = { ...doc.progress, ...progress, updatedAt: Date.now() };
+            doc.lastOpened = Date.now();
+            return this.saveDocument(doc);
+        }
+
+        async saveTokens(docId, tokens) {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('tokens', 'readwrite');
+                const request = tx.objectStore('tokens').put({ docId, tokens, cachedAt: Date.now() });
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getTokens(docId) {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('tokens', 'readonly');
+                const request = tx.objectStore('tokens').get(docId);
+                request.onsuccess = () => resolve(request.result ? request.result.tokens : null);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async saveSetting(key, value) {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('settings', 'readwrite');
+                const request = tx.objectStore('settings').put({ key, value });
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getSetting(key, defaultValue = null) {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('settings', 'readonly');
+                const request = tx.objectStore('settings').get(key);
+                request.onsuccess = () => resolve(request.result ? request.result.value : defaultValue);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async getAllSettings() {
+            await this.ready;
+            return new Promise((resolve, reject) => {
+                const tx = this.db.transaction('settings', 'readonly');
+                const request = tx.objectStore('settings').getAll();
+                request.onsuccess = () => {
+                    const settings = {};
+                    request.result.forEach(item => settings[item.key] = item.value);
+                    resolve(settings);
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+    }
+
+    function generateDocumentId(file) {
+        const input = `${file.name}-${file.size}-${file.lastModified}`;
+        let hash = 0;
+        for (let i = 0; i < input.length; i++) {
+            hash = ((hash << 5) - hash) + input.charCodeAt(i);
+            hash = hash & hash;
+        }
+        return `doc_${Math.abs(hash).toString(16)}`;
+    }
+
+    // ============================================================
+    // TOKENIZER
+    // ============================================================
+
+    const TERMINAL_PUNCT = /[.!?…]+$/;
+    const MAJOR_PUNCT = /[:;—–]+$/;
+    const MINOR_PUNCT = /[,()'""\-]+$/;
+
+    function calculateORP(word) {
+        const cleanWord = word.replace(/[^a-zA-Z0-9]/g, '');
+        const len = cleanWord.length;
+        if (len <= 1) return 0;
+        if (len <= 3) return 0;
+        if (len <= 5) return 1;
+        if (len <= 9) return 2;
+        if (len <= 13) return 3;
+        return 4;
+    }
+
+    function findORPInWord(word) {
+        const leadingMatch = word.match(/^[^a-zA-Z0-9]*/);
+        const leadingOffset = leadingMatch ? leadingMatch[0].length : 0;
+        const cleanWord = word.slice(leadingOffset).replace(/[^a-zA-Z0-9]/g, '');
+        const orpInClean = calculateORP(cleanWord);
+        let cleanIndex = 0;
+        for (let i = leadingOffset; i < word.length; i++) {
+            if (/[a-zA-Z0-9]/.test(word[i])) {
+                if (cleanIndex === orpInClean) return i;
+                cleanIndex++;
+            }
+        }
+        return leadingOffset;
+    }
+
+    function classifyPunctuation(word) {
+        if (TERMINAL_PUNCT.test(word)) return 'terminal';
+        if (MAJOR_PUNCT.test(word)) return 'major';
+        if (MINOR_PUNCT.test(word)) return 'minor';
+        return 'none';
+    }
+
+    // Smooth timing: metronome-like with gentle assists
+    // Long word multipliers: gentle bump only
+    function getLongWordMultiplier(wordLength) {
+        if (wordLength <= 8) return 1.00;
+        if (wordLength <= 12) return 1.05;
+        return 1.10; // cap at +10%
+    }
+
+    // Calculate multiplier for a token (stored for clamping logic)
+    function calculateMultiplier(flags, wordLength) {
+        let multiplier = getLongWordMultiplier(wordLength);
+
+        // Punctuation pauses (these are "hard stops" exempt from smoothing)
+        switch (flags.punctuation) {
+            case 'minor': multiplier *= 1.15; break;  // comma, etc
+            case 'major': multiplier *= 1.25; break;  // colon, semicolon
+            case 'terminal': multiplier *= 1.40; break; // period, !, ?
+        }
+
+        // Paragraph boundaries (also exempt from smoothing)
+        if (flags.isParagraphEnd) multiplier *= 1.30;
+        if (flags.isParagraphStart) multiplier *= 1.10;
+
+        return multiplier;
+    }
+
+    // Check if token has a "hard stop" (exempt from duration clamping)
+    function isHardStop(flags) {
+        return flags.punctuation === 'terminal' ||
+               flags.punctuation === 'major' ||
+               flags.isParagraphEnd ||
+               flags.isParagraphStart;
+    }
+
+    // Normalize words to prevent orphan punctuation flashes
+    function normalizeWords(words) {
+        const result = [];
+        for (let i = 0; i < words.length; i++) {
+            let word = words[i];
+
+            // Skip empty words
+            if (!word) continue;
+
+            // Check if this is orphan punctuation (only punctuation, no letters)
+            const hasLetters = /[a-zA-Z0-9]/.test(word);
+            if (!hasLetters && word.length <= 3) {
+                // Merge orphan punctuation with previous word if possible
+                if (result.length > 0) {
+                    result[result.length - 1] += ' ' + word;
+                    continue;
+                }
+                // Or merge with next word
+                if (i + 1 < words.length) {
+                    words[i + 1] = word + ' ' + words[i + 1];
+                    continue;
+                }
+            }
+
+            // Handle em-dashes and other connectors that split words
+            // e.g., "well—" followed by standalone "—known"
+            if (word.match(/^[—–-]+$/) && result.length > 0 && i + 1 < words.length) {
+                // Merge dash with previous word
+                result[result.length - 1] += word;
+                continue;
+            }
+
+            result.push(word);
+        }
+        return result;
+    }
+
+    function tokenize(text, mode = 'reading') {
+        const tokens = [];
+        const paragraphs = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+
+        for (const paragraph of paragraphs) {
+            const rawWords = paragraph.replace(/\s+/g, ' ').trim().split(' ').filter(w => w.length > 0);
+            const words = normalizeWords(rawWords);
+
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const cleanWord = word.replace(/[^a-zA-Z0-9]/g, '');
+
+                // Skip if still no letters after normalization
+                if (!cleanWord) continue;
+
+                const flags = {
+                    isParagraphStart: i === 0,
+                    isParagraphEnd: i === words.length - 1,
+                    punctuation: classifyPunctuation(word),
+                    wordLength: cleanWord.length
+                };
+
+                tokens.push({
+                    word,
+                    orpIndex: findORPInWord(word),
+                    multiplier: calculateMultiplier(flags, cleanWord.length),
+                    flags
+                });
+            }
+        }
+        return tokens;
+    }
+
+    // Duration calculation with smoothing clamp
+    // Base timing: 60000 / wpm (e.g., 900 WPM = 66.67ms base)
+    // Clamp prevents sudden jumps between consecutive non-punctuation words
+    let prevDuration = null;
+
+    function getDisplayDuration(token, wpm, applyClamp = true) {
+        const baseMs = 60000 / wpm;
+
+        // Handle both old format (baseDurationMs) and new format (multiplier)
+        // Old tokens have baseDurationMs but no multiplier
+        const multiplier = token.multiplier ?? 1.0;
+        let duration = Math.round(baseMs * multiplier);
+
+        // Apply smoothing clamp for non-hard-stop words
+        const flags = token.flags || {};
+        if (applyClamp && prevDuration !== null && !isHardStop(flags)) {
+            const minDuration = Math.round(prevDuration * 0.85);
+            const maxDuration = Math.round(prevDuration * 1.15);
+            duration = Math.max(minDuration, Math.min(maxDuration, duration));
+        }
+
+        // DEBUG: Log calculation
+        console.log(`[getDisplayDuration] base: ${baseMs.toFixed(1)}ms, mult: ${multiplier.toFixed(2)}, result: ${duration}ms, clamped: ${applyClamp && !isHardStop(flags)}`);
+
+        prevDuration = duration;
+        return duration;
+    }
+
+    // Reset duration clamp (call when seeking or starting fresh)
+    function resetDurationClamp() {
+        prevDuration = null;
+    }
+
+    // ============================================================
+    // EPUB PARSER
+    // ============================================================
+
+    // Patterns for detecting front matter / nav content
+    const NAV_FILENAME_PATTERNS = /^(toc|nav|contents|index|copyright|titlepage|cover|halftitle|frontmatter|dedication|acknowledgments?|preface|foreword|introduction|about)/i;
+    const CHAPTER_PATTERNS = /^(chapter|part|book|prologue|epilogue|section|\d+[.:]\s)/i;
+
+    // Check if content is likely navigation (high link density)
+    function isNavigationContent(doc) {
+        const body = doc.body || doc.documentElement;
+        const allText = body.textContent || '';
+        const totalChars = allText.replace(/\s+/g, '').length;
+
+        if (totalChars < 50) return true; // Too short, likely front matter
+
+        // Count link text characters
+        const links = body.querySelectorAll('a');
+        let linkChars = 0;
+        links.forEach(a => {
+            linkChars += (a.textContent || '').replace(/\s+/g, '').length;
+        });
+
+        // High link density = likely TOC/nav
+        const linkRatio = linkChars / totalChars;
+        if (linkRatio > 0.5) return true;
+
+        // Check for nav elements with epub:type="toc"
+        const navToc = doc.querySelector('nav[epub\\:type="toc"], nav[*|type="toc"]');
+        if (navToc) return true;
+
+        // Check if mostly list items (another TOC indicator)
+        const listItems = body.querySelectorAll('li');
+        if (listItems.length > 5 && linkRatio > 0.3) return true;
+
+        return false;
+    }
+
+    // Check if section is likely prose content
+    function isProseContent(text) {
+        const words = text.split(/\s+/).filter(w => w.length > 0);
+        if (words.length < 30) return false; // Too short
+
+        // Check for paragraph-like structure (sentences)
+        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+        if (sentences.length < 2) return false;
+
+        // Average sentence length check
+        const avgSentenceLen = words.length / Math.max(sentences.length, 1);
+        if (avgSentenceLen < 5) return false; // Likely headings/lists, not prose
+
+        return true;
+    }
+
+    // Find the first likely prose chapter index
+    function findFirstProseIndex(sections) {
+        for (let i = 0; i < sections.length; i++) {
+            const text = sections[i].text;
+            // Check for chapter markers
+            if (CHAPTER_PATTERNS.test(text.substring(0, 100))) {
+                return i;
+            }
+            // Check for substantial prose
+            if (isProseContent(text) && text.split(/\s+/).length > 200) {
+                return i;
+            }
+        }
+        // Fallback: skip first 10% as front matter
+        return Math.min(Math.floor(sections.length * 0.1), sections.length - 1);
+    }
+
+    async function parseEpub(file) {
+        const zip = await JSZip.loadAsync(file);
+        const containerXml = await zip.file('META-INF/container.xml')?.async('string');
+        if (!containerXml) throw new Error('Invalid EPUB: missing container.xml');
+
+        const parser = new DOMParser();
+        const containerDoc = parser.parseFromString(containerXml, 'text/xml');
+        const rootfilePath = containerDoc.querySelector('rootfile')?.getAttribute('full-path');
+        if (!rootfilePath) throw new Error('Invalid EPUB: cannot locate content file');
+
+        const opfContent = await zip.file(rootfilePath)?.async('string');
+        if (!opfContent) throw new Error('Invalid EPUB: cannot read OPF file');
+
+        const opfDoc = parser.parseFromString(opfContent, 'text/xml');
+
+        // Metadata
+        const getMetaValue = (tagName) => {
+            const el = opfDoc.querySelector(`metadata ${tagName}, metadata dc\\:${tagName}, metadata *|${tagName}`);
+            return el?.textContent?.trim() || '';
+        };
+        const metadata = {
+            title: getMetaValue('title') || 'Untitled',
+            author: getMetaValue('creator') || ''
+        };
+
+        // Build manifest with properties (namespace-safe selectors)
+        const manifest = new Map();
+        opfDoc.querySelectorAll('manifest item, *|manifest *|item').forEach(item => {
+            const id = item.getAttribute('id');
+            if (!id) return;
+            const properties = item.getAttribute('properties') || '';
+            manifest.set(id, {
+                href: item.getAttribute('href'),
+                mediaType: item.getAttribute('media-type'),
+                properties: properties,
+                isNav: properties.includes('nav') // EPUB 3 nav document
+            });
+        });
+        console.log(`[EPUB] manifest items: ${manifest.size}`);
+
+        // Spine - skip nav documents (namespace-safe selectors)
+        const textTypes = ['application/xhtml+xml', 'text/html'];
+        const spineItems = [];
+        opfDoc.querySelectorAll('spine itemref, *|spine *|itemref').forEach(itemref => {
+            const idref = itemref.getAttribute('idref');
+            const item = manifest.get(idref);
+            if (!item) return;
+            if (!textTypes.includes(item.mediaType)) return;
+            if (item.isNav) return; // Skip EPUB 3 nav document
+
+            // Skip by filename pattern (toc.xhtml, nav.xhtml, etc.)
+            const filename = item.href.split('/').pop().toLowerCase();
+            if (NAV_FILENAME_PATTERNS.test(filename)) return;
+
+            spineItems.push({ href: item.href, id: idref });
+        });
+        console.log(`[EPUB] spineItems: ${spineItems.length}`);
+
+        // Guardrail: if spine is empty, OPF selectors likely failed
+        if (spineItems.length === 0) {
+            console.error('[EPUB] Spine is empty — OPF selectors likely failed (namespace issue).');
+            throw new Error('Could not extract content from EPUB. The file may use an unsupported format.');
+        }
+
+        // Compute OPF directory for resolving relative paths
+        const opfDir = rootfilePath.substring(0, rootfilePath.lastIndexOf('/') + 1);
+
+        // Helper: resolve href relative to OPF directory
+        function resolveHref(href) {
+            // Decode URL encoding
+            let decoded = decodeURIComponent(href);
+
+            // If href is absolute (starts with /), use as-is minus the leading /
+            if (decoded.startsWith('/')) {
+                return decoded.substring(1);
+            }
+
+            // Handle ../ navigation
+            if (decoded.startsWith('../')) {
+                const baseParts = opfDir.split('/').filter(p => p);
+                const hrefParts = decoded.split('/');
+                while (hrefParts[0] === '..') {
+                    baseParts.pop();
+                    hrefParts.shift();
+                }
+                return [...baseParts, ...hrefParts].join('/');
+            }
+
+            // Simple relative path
+            return opfDir + decoded;
+        }
+
+        // Helper: case-insensitive file lookup with filename fallback
+        function findFileInZip(zip, targetPath) {
+            // Try exact match first
+            let file = zip.file(targetPath);
+            if (file) return { file, path: targetPath, fallback: false };
+
+            // Try case-insensitive full path match
+            const targetLower = targetPath.toLowerCase();
+            const allFiles = Object.keys(zip.files);
+            for (const filePath of allFiles) {
+                if (filePath.toLowerCase() === targetLower) {
+                    console.log(`[EPUB] Case-insensitive match: "${targetPath}" -> "${filePath}"`);
+                    return { file: zip.file(filePath), path: filePath, fallback: false };
+                }
+            }
+
+            // Fallback: search for any file ending with the same filename (case-insensitive)
+            const targetFilename = targetPath.split('/').pop().toLowerCase();
+            for (const filePath of allFiles) {
+                const filename = filePath.split('/').pop().toLowerCase();
+                if (filename === targetFilename && !zip.files[filePath].dir) {
+                    console.log(`[EPUB] Filename fallback: "${targetPath}" -> "${filePath}"`);
+                    return { file: zip.file(filePath), path: filePath, fallback: true };
+                }
+            }
+
+            return { file: null, path: targetPath, fallback: false };
+        }
+
+        // Extract text with section tracking
+        const sections = [];
+        for (let i = 0; i < spineItems.length; i++) {
+            const { href, id } = spineItems[i];
+            const resolvedPath = resolveHref(href);
+            const { file, path: actualPath } = findFileInZip(zip, resolvedPath);
+
+            // Debug logging
+            let skipReason = null;
+            let textLen = 0;
+
+            if (!file) {
+                skipReason = 'file not found';
+                console.log(`[EPUB] spine[${i}] href="${href}" resolved="${resolvedPath}" found=false skipped=true reason="${skipReason}"`);
+                continue;
+            }
+
+            const content = await file.async('string');
+            if (!content) {
+                skipReason = 'empty content';
+                console.log(`[EPUB] spine[${i}] href="${href}" resolved="${actualPath}" found=true textLen=0 skipped=true reason="${skipReason}"`);
+                continue;
+            }
+
+            const doc = parser.parseFromString(content, 'text/html');
+
+            // Remove non-content elements first (before checking)
+            ['script', 'style', 'nav', 'aside'].forEach(tag =>
+                doc.querySelectorAll(tag).forEach(el => el.remove())
+            );
+
+            // Remove elements with nav-related epub:type
+            doc.querySelectorAll('[epub\\:type*="toc"], [epub\\:type*="landmarks"], [epub\\:type*="page-list"]')
+                .forEach(el => el.remove());
+
+            const text = (doc.body || doc.documentElement).textContent || '';
+            const trimmed = text.trim();
+            textLen = trimmed.length;
+
+            // Only check isNavigationContent for obvious nav candidates (by filename)
+            // Do NOT run nav filtering for normal chapter files like *_c01_*.xhtml
+            const filenameLower = href.split('/').pop().toLowerCase();
+            const navCandidate = /toc|nav|contents/.test(filenameLower) && !/[_-]c\d+[_-]/.test(filenameLower);
+
+            if (navCandidate && isNavigationContent(doc)) {
+                skipReason = 'navigation content';
+                console.log(`[EPUB] spine[${i}] href="${href}" resolved="${actualPath}" found=true textLen=${textLen} skipped=true reason="${skipReason}"`);
+                continue;
+            }
+
+            // Accept any non-empty content
+            if (trimmed.length > 0) {
+                sections.push({ id, href, text: trimmed });
+                console.log(`[EPUB] spine[${i}] href="${href}" resolved="${actualPath}" found=true textLen=${textLen} skipped=false`);
+            } else {
+                skipReason = 'empty after trim';
+                console.log(`[EPUB] spine[${i}] href="${href}" resolved="${actualPath}" found=true textLen=0 skipped=true reason="${skipReason}"`);
+            }
+        }
+        console.log(`[EPUB] sections: ${sections.length}`);
+
+        // Find first prose chapter for "skip to content" feature
+        const firstProseIndex = findFirstProseIndex(sections);
+        const textParts = sections.map(s => s.text);
+
+        // Calculate word count up to first prose (front matter words)
+        let frontMatterWords = 0;
+        for (let i = 0; i < firstProseIndex; i++) {
+            frontMatterWords += sections[i].text.split(/\s+/).filter(w => w).length;
+        }
+
+        return {
+            metadata,
+            text: textParts.join('\n\n'),
+            wordCount: textParts.join(' ').split(/\s+/).filter(w => w).length,
+            firstProseWordIndex: frontMatterWords, // Word index to skip to
+            sectionCount: sections.length
+        };
+    }
+
+    // ============================================================
+    // PLAYBACK CONTROLLER
+    // ============================================================
+
+    class PlaybackController {
+        constructor(callbacks = {}) {
+            this.tokens = [];
+            this.currentIndex = 0;
+            this.isPlaying = false;
+            this.wpm = 300;
+            this.mode = 'reading';
+            this.onTick = callbacks.onTick || (() => {});
+            this.onComplete = callbacks.onComplete || (() => {});
+            this.onStateChange = callbacks.onStateChange || (() => {});
+            this.onProgress = callbacks.onProgress || (() => {});
+            this.onInterrupted = callbacks.onInterrupted || (() => {}); // iOS visibility callback
+            this.rafId = null;
+            this.lastTimestamp = null;
+            this.accumulatedTime = 0;
+            this.currentTokenDuration = 0;
+            this.wasPlayingBeforeHidden = false;
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    this.wasPlayingBeforeHidden = this.isPlaying;
+                    if (this.isPlaying) {
+                        this.pause();
+                    }
+                } else if (this.wasPlayingBeforeHidden) {
+                    // Don't auto-resume, notify app to show "tap to resume"
+                    this.onInterrupted();
+                    this.wasPlayingBeforeHidden = false;
+                }
+            });
+        }
+
+        load(tokens, startIndex = 0) {
+            this.stop();
+            this.tokens = tokens || [];
+            if (this.tokens.length === 0) {
+                console.warn('[PlaybackController.load] No tokens to load');
+                this.currentIndex = 0;
+            } else {
+                this.currentIndex = Math.max(0, Math.min(startIndex, this.tokens.length - 1));
+            }
+            resetDurationClamp(); // Reset smoothing on load
+            this.emitTick();
+            this.emitStateChange();
+        }
+
+        setWPM(wpm) {
+            const newWpm = Math.max(50, Math.min(2000, wpm));
+            console.log(`[setWPM] requested: ${wpm}, clamped: ${newWpm}, isPlaying: ${this.isPlaying}`);
+            this.wpm = newWpm;
+            // Always recalculate duration for current token (not just when playing)
+            // Don't apply smoothing clamp when WPM changes - reset baseline
+            if (this.tokens[this.currentIndex]) {
+                resetDurationClamp();
+                this.currentTokenDuration = getDisplayDuration(this.tokens[this.currentIndex], this.wpm);
+                console.log(`[setWPM] new duration: ${this.currentTokenDuration}ms for token at index ${this.currentIndex}`);
+            }
+            this.emitStateChange();
+        }
+
+        adjustWPM(delta) { this.setWPM(this.wpm + delta); }
+        setMode(mode) { this.mode = mode; this.emitStateChange(); }
+
+        play() {
+            if (this.tokens.length === 0) return;
+            if (this.currentIndex >= this.tokens.length - 1) {
+                this.currentIndex = 0;
+                resetDurationClamp(); // Reset smoothing when restarting
+            }
+            this.isPlaying = true;
+            this.accumulatedTime = 0;
+            this.lastTimestamp = null;
+            this.currentTokenDuration = getDisplayDuration(this.tokens[this.currentIndex], this.wpm);
+            this.rafId = requestAnimationFrame((ts) => this.tick(ts));
+            this.emitStateChange();
+        }
+
+        pause() {
+            this.isPlaying = false;
+            if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+            this.lastTimestamp = null;
+            this.emitStateChange();
+        }
+
+        stop() { this.pause(); this.currentIndex = 0; this.accumulatedTime = 0; this.emitStateChange(); }
+        toggle() { this.isPlaying ? this.pause() : this.play(); }
+
+        step(delta) {
+            const wasPlaying = this.isPlaying;
+            if (wasPlaying) this.pause();
+            this.currentIndex = Math.max(0, Math.min(this.currentIndex + delta, this.tokens.length - 1));
+            this.accumulatedTime = 0;
+            resetDurationClamp(); // Reset smoothing on step
+            this.emitTick();
+            this.emitProgress();
+            this.emitStateChange();
+        }
+
+        seek(index) {
+            const wasPlaying = this.isPlaying;
+            if (wasPlaying) this.pause();
+            this.currentIndex = Math.max(0, Math.min(index, this.tokens.length - 1));
+            this.accumulatedTime = 0;
+            resetDurationClamp(); // Reset smoothing on seek
+            this.emitTick();
+            this.emitProgress();
+            if (wasPlaying) this.play(); else this.emitStateChange();
+        }
+
+        seekPercent(percent) { this.seek(Math.floor((percent / 100) * this.tokens.length)); }
+        rewind(words = 10) { this.step(-words); }
+
+        tick(timestamp) {
+            if (!this.isPlaying) return;
+            if (this.lastTimestamp === null) this.lastTimestamp = timestamp;
+            this.accumulatedTime += timestamp - this.lastTimestamp;
+            this.lastTimestamp = timestamp;
+
+            // DEBUG: Log timing info
+            console.log(`[Timing] WPM: ${this.wpm}, delay: ${this.currentTokenDuration}ms`);
+
+            if (this.accumulatedTime >= this.currentTokenDuration) {
+                this.accumulatedTime -= this.currentTokenDuration;
+                this.currentIndex++;
+                if (this.currentIndex >= this.tokens.length) {
+                    this.currentIndex = this.tokens.length - 1;
+                    this.pause();
+                    this.onComplete();
+                    return;
+                }
+                this.currentTokenDuration = getDisplayDuration(this.tokens[this.currentIndex], this.wpm);
+                this.emitTick();
+                this.emitProgress();
+            }
+            this.rafId = requestAnimationFrame((ts) => this.tick(ts));
+        }
+
+        emitTick() { if (this.tokens[this.currentIndex]) this.onTick(this.tokens[this.currentIndex], this.currentIndex); }
+        emitProgress() { this.onProgress(this.tokens.length > 0 ? (this.currentIndex / this.tokens.length) * 100 : 0); }
+        emitStateChange() { this.onStateChange({ isPlaying: this.isPlaying, currentIndex: this.currentIndex, wpm: this.wpm, mode: this.mode }); }
+        getState() { return { isPlaying: this.isPlaying, currentIndex: this.currentIndex, wpm: this.wpm, mode: this.mode }; }
+        getProgress() { return { current: this.currentIndex + 1, total: this.tokens.length, percent: this.tokens.length > 0 ? (this.currentIndex / this.tokens.length) * 100 : 0 }; }
+    }
+
+    // ============================================================
+    // MAIN APPLICATION
+    // ============================================================
+
+    class SpeedReaderApp {
+        constructor() {
+            this.persistence = new PersistenceLayer();
+            this.playback = null;
+            this.currentDocument = null;
+            this.tokens = [];
+            this.settings = { defaultWPM: 300, fontSize: 48, showGuides: true, flowMode: false, mode: 'reading', fontScale: this.getDefaultScale(), fontFamily: "'Lexend'" };
+            // Tuning overlay state
+            this.tuningTimeout = null;
+            this.longPressTimer = null;
+            this.longPressDuration = 400; // ms to trigger long press
+
+            this.initElements();
+            this.initPlayback();
+            this.initEventListeners();
+            this.loadSettings();
+            this.loadLibrary();
+
+            console.log('Speed Reader initialized');
+        }
+
+        initElements() {
+            this.libraryView = document.getElementById('library-view');
+            this.readerView = document.getElementById('reader-view');
+            this.dropZone = document.getElementById('drop-zone');
+            this.fileInput = document.getElementById('file-input');
+            this.recentList = document.getElementById('recent-list');
+            this.settingsBtn = document.getElementById('settings-btn');
+            this.backBtn = document.getElementById('back-btn');
+            this.docTitle = document.getElementById('doc-title');
+            this.readerSettingsBtn = document.getElementById('reader-settings-btn');
+            this.rsvpDisplay = document.getElementById('rsvp-display');
+            this.wordBefore = document.getElementById('word-before');
+            this.wordPivot = document.getElementById('word-pivot');
+            this.wordAfter = document.getElementById('word-after');
+            this.progressSlider = document.getElementById('progress-slider');
+            this.progressCurrent = document.getElementById('progress-current');
+            this.progressTotal = document.getElementById('progress-total');
+            this.playBtn = document.getElementById('play-btn');
+            this.iconPlay = document.getElementById('icon-play');
+            this.iconPause = document.getElementById('icon-pause');
+            this.prevBtn = document.getElementById('prev-btn');
+            this.nextBtn = document.getElementById('next-btn');
+            this.rewindBtn = document.getElementById('rewind-btn');
+            this.settingsPanel = document.getElementById('settings-panel');
+            this.closeSettingsBtn = document.getElementById('close-settings');
+            this.fontSizeSetting = document.getElementById('font-size-setting');
+            this.fontSizeLabel = document.getElementById('font-size-label');
+            this.fontFamilySetting = document.getElementById('font-family-setting');
+            this.defaultWpmSetting = document.getElementById('default-wpm-setting');
+            this.showGuidesSetting = document.getElementById('show-guides-setting');
+            this.flowModeSetting = document.getElementById('flow-mode-setting');
+            this.clearLibraryBtn = document.getElementById('clear-library-btn');
+            this.modeToggleBtns = document.querySelectorAll('.toggle-btn[data-mode]');
+            this.loadingOverlay = document.getElementById('loading-overlay');
+            this.loadingText = document.getElementById('loading-text');
+            // Tuning overlay elements
+            this.tuningOverlay = document.getElementById('tuning-overlay');
+            this.tuningWpmSlider = document.getElementById('tuning-wpm-slider');
+            this.tuningWpmValue = document.getElementById('tuning-wpm-value');
+            this.tuningScaleSlider = document.getElementById('tuning-scale-slider');
+            this.tuningScaleValue = document.getElementById('tuning-scale-value');
+            this.skipToContentBtn = document.getElementById('skip-to-content-btn');
+            // Guide elements for JS positioning
+            this.focusGuides = document.getElementById('focus-guides');
+            this.guideTop = document.getElementById('guide-top');
+            this.guideBottom = document.getElementById('guide-bottom');
+            this.guideTickTop = document.getElementById('guide-tick-top');
+            this.guideTickBottom = document.getElementById('guide-tick-bottom');
+            this.wordContainer = document.querySelector('.word-container');
+            // Quick adjust overlay elements
+            this.quickAdjustBtn = document.getElementById('quick-adjust-btn');
+            this.quickAdjustOverlay = document.getElementById('quick-adjust-overlay');
+            this.quickFontSlider = document.getElementById('quick-font-slider');
+            this.quickFontLabel = document.getElementById('quick-font-label');
+            this.quickWpmSlider = document.getElementById('quick-wpm-slider');
+            this.quickWpmLabel = document.getElementById('quick-wpm-label');
+            // Fullscreen button elements
+            this.fullscreenBtn = document.getElementById('fullscreen-btn');
+            this.iconExpand = document.getElementById('icon-expand');
+            this.iconCollapse = document.getElementById('icon-collapse');
+            // Reader controls for auto-hide
+            this.readerControls = document.querySelector('.reader-controls');
+            this.autoHideTimer = null;
+            this.autoHideDelay = 2500; // 2.5 seconds
+        }
+
+        initPlayback() {
+            this.playback = new PlaybackController({
+                onTick: (token) => this.renderWord(token),
+                onComplete: () => this.saveProgress(),
+                onStateChange: (state) => this.updatePlaybackUI(state),
+                onProgress: (percent) => this.updateProgress(percent),
+                onInterrupted: () => this.showResumePrompt()
+            });
+        }
+
+        showResumePrompt() {
+            // Show "Tap to resume" overlay
+            let prompt = document.getElementById('resume-prompt');
+            if (!prompt) {
+                prompt = document.createElement('div');
+                prompt.id = 'resume-prompt';
+                prompt.className = 'resume-prompt';
+                prompt.innerHTML = '<span>Tap to resume</span>';
+                this.rsvpDisplay.appendChild(prompt);
+                prompt.addEventListener('click', () => {
+                    prompt.classList.remove('visible');
+                    this.playback.play();
+                });
+            }
+            prompt.classList.add('visible');
+        }
+
+        initEventListeners() {
+            // File input - click to open
+            this.dropZone.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.fileInput.click();
+            });
+
+            // File input change
+            this.fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) this.importFile(file);
+            });
+
+            // Drag and drop
+            this.dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone.classList.add('drag-over');
+            });
+
+            this.dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone.classList.remove('drag-over');
+            });
+
+            this.dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.dropZone.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file) this.importFile(file);
+            });
+
+            // Prevent default drag behavior on window
+            window.addEventListener('dragover', (e) => e.preventDefault());
+            window.addEventListener('drop', (e) => e.preventDefault());
+
+            // Navigation
+            this.backBtn.addEventListener('click', () => this.showLibrary());
+
+            // Settings
+            this.settingsBtn.addEventListener('click', () => this.openSettings());
+            this.readerSettingsBtn.addEventListener('click', () => this.openSettings());
+            this.closeSettingsBtn.addEventListener('click', () => this.closeSettings());
+            this.settingsPanel.addEventListener('click', (e) => { if (e.target === this.settingsPanel) this.closeSettings(); });
+
+            // Settings controls
+            this.fontSizeSetting.addEventListener('input', (e) => this.setFontSize(e.target.value));
+            this.fontFamilySetting.addEventListener('change', (e) => this.setFontFamily(e.target.value));
+            this.defaultWpmSetting.addEventListener('change', (e) => this.setDefaultWPM(e.target.value));
+            this.showGuidesSetting.addEventListener('change', (e) => this.setShowGuides(e.target.checked));
+            this.flowModeSetting.addEventListener('change', (e) => this.setFlowMode(e.target.checked));
+            this.clearLibraryBtn.addEventListener('click', () => this.clearLibrary());
+            this.modeToggleBtns.forEach(btn => btn.addEventListener('click', () => this.setMode(btn.dataset.mode)));
+
+            // Playback controls
+            this.playBtn.addEventListener('click', () => this.playback.toggle());
+            this.prevBtn.addEventListener('click', () => this.playback.step(-1));
+            this.nextBtn.addEventListener('click', () => this.playback.step(1));
+            this.rewindBtn.addEventListener('click', () => this.playback.rewind(10));
+            this.progressSlider.addEventListener('input', (e) => this.playback.seekPercent(parseFloat(e.target.value)));
+
+            // Long press to show tuning overlay
+            this.rsvpDisplay.addEventListener('mousedown', (e) => this.startLongPress(e));
+            this.rsvpDisplay.addEventListener('touchstart', (e) => this.startLongPress(e), { passive: true });
+            this.rsvpDisplay.addEventListener('mouseup', () => this.cancelLongPress());
+            this.rsvpDisplay.addEventListener('mouseleave', () => this.cancelLongPress());
+            this.rsvpDisplay.addEventListener('touchend', () => this.cancelLongPress());
+            this.rsvpDisplay.addEventListener('touchcancel', () => this.cancelLongPress());
+
+            // RSVP display tap to play/pause (only if not interacting with tuning overlay)
+            this.rsvpDisplay.addEventListener('click', (e) => {
+                if (!e.target.closest('.reader-controls') && !e.target.closest('.reader-header') && !e.target.closest('.tuning-overlay')) {
+                    // Don't toggle if tuning overlay is visible
+                    if (!this.tuningOverlay.classList.contains('visible')) {
+                        this.playback.toggle();
+                    }
+                }
+            });
+
+            // Tuning overlay sliders
+            this.tuningWpmSlider.addEventListener('input', (e) => {
+                const rawWpm = parseInt(e.target.value);
+                const snappedWpm = this.snapWpm(rawWpm);
+                this.playback.setWPM(snappedWpm);
+                this.tuningWpmValue.textContent = `${snappedWpm} wpm`;
+                this.resetTuningTimeout();
+            });
+            this.tuningScaleSlider.addEventListener('input', (e) => {
+                this.setScale(parseFloat(e.target.value));
+                this.resetTuningTimeout();
+            });
+
+            // Skip to content button
+            this.skipToContentBtn.addEventListener('click', () => {
+                this.skipToContent();
+                this.hideTuningOverlay();
+            });
+
+            // Quick adjust overlay toggle
+            this.quickAdjustBtn.addEventListener('click', () => this.toggleQuickAdjust());
+
+            // Fullscreen toggle
+            this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+
+            // Listen for fullscreen changes (user pressing Esc, etc.)
+            document.addEventListener('fullscreenchange', () => this.updateFullscreenUI());
+            document.addEventListener('webkitfullscreenchange', () => this.updateFullscreenUI());
+
+            // Auto-hide controls: restore on any user interaction
+            const restoreControls = () => this.resetAutoHideTimer();
+            this.readerView.addEventListener('mousemove', restoreControls);
+            this.readerView.addEventListener('touchstart', restoreControls, { passive: true });
+            this.readerView.addEventListener('click', restoreControls);
+
+            // Quick adjust sliders with 25-step snapping
+            this.quickFontSlider.addEventListener('input', (e) => {
+                const raw = parseInt(e.target.value);
+                const snapped = Math.max(25, Math.min(150, Math.round(raw / 25) * 25));
+                this.setFontSize(snapped);
+                this.quickFontLabel.textContent = `${snapped}px`;
+                // Sync main settings slider
+                this.fontSizeSetting.value = snapped;
+            });
+
+            this.quickWpmSlider.addEventListener('input', (e) => {
+                const raw = parseInt(e.target.value);
+                const snapped = Math.max(100, Math.min(900, Math.round(raw / 25) * 25));
+                this.playback.setWPM(snapped);
+                this.quickWpmLabel.textContent = snapped;
+                // Sync tuning slider
+                this.tuningWpmSlider.value = snapped;
+                this.tuningWpmValue.textContent = `${snapped} wpm`;
+            });
+
+            // Double-tap for big jumps
+            this.lastTapTime = 0;
+            this.lastTapSide = null;
+            this.rsvpDisplay.addEventListener('click', (e) => {
+                if (e.target.closest('.tuning-overlay') || e.target.closest('.quick-adjust-overlay') || e.target.closest('.reader-controls') || e.target.closest('.reader-header')) return;
+                if (this.tuningOverlay.classList.contains('visible')) return;
+
+                const rect = this.rsvpDisplay.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const side = x < rect.width / 3 ? 'left' : (x > rect.width * 2 / 3 ? 'right' : 'center');
+                const now = Date.now();
+
+                if (side !== 'center' && now - this.lastTapTime < 300 && this.lastTapSide === side) {
+                    // Double-tap detected - big jump
+                    e.stopPropagation();
+                    const jump = side === 'left' ? -50 : 50;
+                    this.playback.step(jump);
+                    this.showJumpIndicator(jump);
+                    this.lastTapTime = 0;
+                    return;
+                }
+
+                this.lastTapTime = now;
+                this.lastTapSide = side;
+            });
+
+            // Swipe for small jumps
+            this.touchStartX = 0;
+            this.touchStartY = 0;
+            this.rsvpDisplay.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.tuning-overlay')) return;
+                this.touchStartX = e.touches[0].clientX;
+                this.touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            this.rsvpDisplay.addEventListener('touchend', (e) => {
+                if (e.target.closest('.tuning-overlay')) return;
+                if (!this.touchStartX) return;
+
+                const deltaX = e.changedTouches[0].clientX - this.touchStartX;
+                const deltaY = e.changedTouches[0].clientY - this.touchStartY;
+
+                // Only handle horizontal swipes (ignore vertical for scrolling)
+                if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 2) {
+                    const jump = deltaX > 0 ? -10 : 10; // Swipe right = go back, swipe left = go forward
+                    this.playback.step(jump);
+                    this.showJumpIndicator(jump);
+                }
+                this.touchStartX = 0;
+            }, { passive: true });
+
+            // Keep overlay visible while interacting with sliders
+            this.tuningOverlay.addEventListener('mousedown', () => this.resetTuningTimeout());
+            this.tuningOverlay.addEventListener('touchstart', () => this.resetTuningTimeout(), { passive: true });
+
+            // Close tuning overlay when clicking outside
+            this.rsvpDisplay.addEventListener('click', (e) => {
+                if (this.tuningOverlay.classList.contains('visible') && !e.target.closest('.tuning-overlay')) {
+                    this.hideTuningOverlay();
+                }
+            });
+
+            // Keyboard
+            document.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+            // Window resize - re-align word
+            window.addEventListener('resize', () => {
+                requestAnimationFrame(() => this.alignWordToPivot());
+            });
+        }
+
+        handleKeydown(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (!this.readerView.classList.contains('active')) return;
+
+            switch (e.code) {
+                case 'Space': e.preventDefault(); this.playback.toggle(); break;
+                case 'ArrowLeft': e.preventDefault(); this.playback.step(-1); break;
+                case 'ArrowRight': e.preventDefault(); this.playback.step(1); break;
+                case 'ArrowUp': e.preventDefault(); this.playback.adjustWPM(50); break;
+                case 'ArrowDown': e.preventDefault(); this.playback.adjustWPM(-50); break;
+                case 'Escape': e.preventDefault(); this.settingsPanel.classList.contains('open') ? this.closeSettings() : this.showLibrary(); break;
+            }
+        }
+
+        async importFile(file) {
+            console.log('Importing file:', file.name);
+            this.showLoading('Processing file...');
+
+            try {
+                const docId = generateDocumentId(file);
+                const extension = file.name.split('.').pop().toLowerCase();
+                let content, metadata, firstProseWordIndex = 0;
+
+                switch (extension) {
+                    case 'epub':
+                        this.showLoading('Parsing EPUB...');
+                        const epub = await parseEpub(file);
+                        content = epub.text;
+                        metadata = epub.metadata;
+                        firstProseWordIndex = epub.firstProseWordIndex || 0;
+                        break;
+                    case 'txt':
+                        content = await file.text();
+                        metadata = { title: file.name.replace(/\.txt$/i, ''), author: '' };
+                        break;
+                    case 'html':
+                    case 'htm':
+                        const html = await file.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        ['script', 'style', 'nav', 'header', 'footer'].forEach(tag => doc.querySelectorAll(tag).forEach(el => el.remove()));
+                        content = doc.body.textContent || '';
+                        metadata = { title: file.name.replace(/\.html?$/i, ''), author: '' };
+                        break;
+                    case 'pdf':
+                        this.showLoading('Parsing PDF...');
+                        if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js not loaded');
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        const arrayBuffer = await file.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                        let pdfText = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            pdfText += textContent.items.map(item => item.str).join(' ') + '\n\n';
+                        }
+                        content = pdfText;
+                        metadata = { title: file.name.replace(/\.pdf$/i, ''), author: '' };
+                        break;
+                    default:
+                        throw new Error('Unsupported file format: ' + extension);
+                }
+
+                this.showLoading('Tokenizing...');
+                this.tokens = tokenize(content, this.settings.mode);
+                console.log('Tokenized:', this.tokens.length, 'words');
+
+                // Guardrail: never save empty tokens to IndexedDB
+                if (this.tokens.length === 0) {
+                    throw new Error('No readable content extracted from this file (0 words). Try a different file.');
+                }
+
+                const docRecord = {
+                    id: docId,
+                    title: metadata.title || file.name,
+                    author: metadata.author || '',
+                    sourceType: extension,
+                    fileName: file.name,
+                    fileSize: file.size,
+                    wordCount: this.tokens.length,
+                    firstProseWordIndex: firstProseWordIndex, // For "Skip to content" feature
+                    addedAt: Date.now(),
+                    lastOpened: Date.now(),
+                    progress: { currentIndex: 0, wpm: this.settings.defaultWPM, mode: this.settings.mode, updatedAt: Date.now() }
+                };
+
+                await this.persistence.saveDocument(docRecord);
+                await this.persistence.saveTokens(docId, this.tokens);
+                this.currentDocument = docRecord;
+
+                this.hideLoading();
+                this.openReader(docRecord);
+
+            } catch (error) {
+                console.error('Import error:', error);
+                this.hideLoading();
+                alert('Error importing file: ' + error.message);
+            }
+
+            this.fileInput.value = '';
+        }
+
+        renderWord(token) {
+            if (!token) {
+                this.wordBefore.textContent = '';
+                this.wordPivot.textContent = '';
+                this.wordAfter.textContent = '';
+                return;
+            }
+            const { word, orpIndex } = token;
+
+            // Split word into left / pivot / right
+            const left = word.substring(0, orpIndex);
+            const pivot = word.charAt(orpIndex);
+            const right = word.substring(orpIndex + 1);
+
+            // Set text content
+            this.wordBefore.textContent = left;
+            this.wordPivot.textContent = pivot;
+            this.wordAfter.textContent = right;
+
+            // Align left/right spans to pivot edges
+            requestAnimationFrame(() => this.alignWordToPivot());
+        }
+
+        // Align left/right spans so they touch pivot edges exactly
+        // Pivot is at left:50% with transform:translateX(-50%) - its center is at stage center
+        // Left span has right:50% - its right edge is at stage center
+        // Right span has left:50% - its left edge is at stage center
+        // We offset each by half the pivot width so they don't overlap the pivot
+        alignWordToPivot() {
+            if (!this.wordPivot || !this.wordBefore || !this.wordAfter) return;
+
+            // Measure pivot width
+            const pivotWidth = this.wordPivot.getBoundingClientRect().width;
+            const halfPivot = pivotWidth / 2;
+
+            // Left span: shift left by halfPivot so its right edge touches pivot's left edge
+            this.wordBefore.style.transform = `translateX(-${halfPivot}px)`;
+
+            // Right span: shift right by halfPivot so its left edge touches pivot's right edge
+            this.wordAfter.style.transform = `translateX(${halfPivot}px)`;
+
+            // Update guide positions (horizontal bars track word height)
+            this.updateGuidePositions();
+        }
+
+        updatePlaybackUI(state) {
+            this.iconPlay.style.display = state.isPlaying ? 'none' : 'block';
+            this.iconPause.style.display = state.isPlaying ? 'block' : 'none';
+            // Update tuning overlay WPM display if visible
+            this.tuningWpmSlider.value = state.wpm;
+            this.tuningWpmValue.textContent = `${state.wpm} wpm`;
+            // Auto-hide controls: start timer when playing, restore when paused
+            if (state.isPlaying) {
+                this.resetAutoHideTimer();
+            } else {
+                // Paused - clear timer and restore controls
+                if (this.autoHideTimer) {
+                    clearTimeout(this.autoHideTimer);
+                    this.autoHideTimer = null;
+                }
+                this.readerControls?.classList.remove('auto-dimmed');
+            }
+        }
+
+        updateProgress(percent) {
+            this.progressSlider.value = percent;
+            const progress = this.playback.getProgress();
+            this.progressCurrent.textContent = progress.current;
+            this.progressTotal.textContent = progress.total;
+        }
+
+        async loadLibrary() {
+            try {
+                const docs = await this.persistence.getRecentDocuments(20);
+                this.renderLibrary(docs);
+            } catch (error) {
+                console.error('Error loading library:', error);
+            }
+        }
+
+        renderLibrary(docs) {
+            if (docs.length === 0) {
+                this.recentList.innerHTML = '<p class="empty-state">No documents yet</p>';
+                return;
+            }
+            this.recentList.innerHTML = docs.map(doc => {
+                const percent = doc.wordCount > 0 ? Math.round((doc.progress?.currentIndex || 0) / doc.wordCount * 100) : 0;
+                return `
+                    <div class="recent-item" data-doc-id="${doc.id}">
+                        <div class="recent-item-header">
+                            <div class="recent-item-title">${doc.title}</div>
+                            <button class="btn-delete" data-action="delete" aria-label="Delete document">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="recent-item-meta">
+                            <span>${doc.author || doc.sourceType.toUpperCase()}</span>
+                            <span>${doc.wordCount >= 1000 ? (doc.wordCount/1000).toFixed(1) + 'k' : doc.wordCount} words</span>
+                        </div>
+                        <div class="recent-item-progress">
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%"></div></div>
+                            <span>${percent}%</span>
+                        </div>
+                        <div class="recent-item-actions">
+                            <button class="btn-resume" data-action="resume">Resume</button>
+                            <button class="btn-restart" data-action="restart">Restart</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            this.recentList.querySelectorAll('.recent-item').forEach(item => {
+                const docId = item.dataset.docId;
+                item.querySelector('.btn-resume').addEventListener('click', (e) => { e.stopPropagation(); this.openDocumentById(docId, true); });
+                item.querySelector('.btn-restart').addEventListener('click', (e) => { e.stopPropagation(); this.openDocumentById(docId, false); });
+                item.querySelector('.btn-delete').addEventListener('click', (e) => { e.stopPropagation(); this.deleteDocument(docId); });
+            });
+        }
+
+        async deleteDocument(docId) {
+            await this.persistence.deleteDocument(docId);
+            this.loadLibrary();
+        }
+
+        async openDocumentById(docId, resume = true) {
+            this.showLoading('Loading...');
+            try {
+                const doc = await this.persistence.getDocument(docId);
+                if (!doc) throw new Error('Document not found');
+                let tokens = await this.persistence.getTokens(docId);
+                console.log(`[openDocumentById] loaded tokens:`, tokens ? tokens.length : 'null');
+
+                if (!tokens || tokens.length === 0) {
+                    throw new Error('Document data not found or empty. Please re-import.');
+                }
+
+                // Migrate old token format (baseDurationMs) to new format (multiplier)
+                if (tokens[0].baseDurationMs !== undefined && tokens[0].multiplier === undefined) {
+                    console.log('[Migration] Upgrading old token format to new format');
+                    tokens = tokens.map(token => {
+                        const cleanWord = token.word.replace(/[^a-zA-Z0-9]/g, '');
+                        const flags = token.flags || {
+                            isParagraphStart: false,
+                            isParagraphEnd: false,
+                            punctuation: classifyPunctuation(token.word),
+                            wordLength: cleanWord.length
+                        };
+                        return {
+                            word: token.word,
+                            orpIndex: token.orpIndex,
+                            multiplier: calculateMultiplier(flags, cleanWord.length),
+                            flags
+                        };
+                    });
+                    // Save migrated tokens
+                    await this.persistence.saveTokens(docId, tokens);
+                    console.log('[Migration] Tokens migrated and saved');
+                }
+
+                this.tokens = tokens;
+                this.currentDocument = doc;
+                doc.lastOpened = Date.now();
+                await this.persistence.saveDocument(doc);
+                this.hideLoading();
+                this.openReader(doc, resume);
+            } catch (error) {
+                console.error('[openDocumentById] Error:', error);
+                this.hideLoading();
+                alert(error.message);
+            }
+        }
+
+        openReader(doc, resume = true) {
+            this.currentDocument = doc;
+            this.docTitle.textContent = doc.title;
+            const startIndex = resume && doc.progress ? doc.progress.currentIndex : 0;
+            // Always use global default WPM - never restore per-document WPM
+            const wpm = this.settings.defaultWPM;
+            console.log(`[openReader] tokens: ${this.tokens.length}, startIndex: ${startIndex}, wpm: ${wpm}`);
+            this.playback.load(this.tokens, startIndex);
+            this.playback.setWPM(wpm);
+            console.log(`[openReader] using WPM: ${this.playback.wpm}, source: default`);
+            this.progressTotal.textContent = this.tokens.length;
+            this.progressCurrent.textContent = startIndex + 1;
+            this.showReader();
+        }
+
+        async saveProgress() {
+            if (!this.currentDocument) return;
+            const state = this.playback.getState();
+            await this.persistence.updateProgress(this.currentDocument.id, { currentIndex: state.currentIndex, wpm: state.wpm, mode: state.mode });
+        }
+
+        showLibrary() {
+            this.saveProgress();
+            this.playback.pause();
+            this.libraryView.classList.add('active');
+            this.readerView.classList.remove('active');
+            this.loadLibrary();
+        }
+
+        showReader() {
+            this.libraryView.classList.remove('active');
+            this.readerView.classList.add('active');
+            // Align word and position guides after view transition
+            requestAnimationFrame(() => {
+                this.alignWordToPivot();
+                this.updateGuidePositions();
+            });
+        }
+
+        async loadSettings() {
+            try {
+                const saved = await this.persistence.getAllSettings();
+                this.settings = { ...this.settings, ...saved };
+                this.applySettings();
+            } catch (error) { console.error('Error loading settings:', error); }
+        }
+
+        applySettings() {
+            document.documentElement.style.setProperty('--word-font-size', `${this.settings.fontSize}px`);
+            this.fontSizeSetting.value = this.settings.fontSize;
+            this.fontSizeLabel.textContent = `${this.settings.fontSize}px`;
+            // Apply font family to RSVP word only (via CSS variable)
+            const fontFamily = this.settings.fontFamily || "'Lexend'";
+            document.documentElement.style.setProperty('--rsvp-word-font', fontFamily);
+            this.fontFamilySetting.value = fontFamily;
+            this.defaultWpmSetting.value = this.settings.defaultWPM;
+            this.showGuidesSetting.checked = this.settings.showGuides;
+            this.rsvpDisplay?.classList.toggle('hide-guides', !this.settings.showGuides);
+            this.flowModeSetting.checked = this.settings.flowMode;
+            this.readerView?.classList.toggle('flow-mode', this.settings.flowMode);
+            this.modeToggleBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === this.settings.mode));
+            // Apply font scale
+            const scale = this.settings.fontScale ?? this.getDefaultScale();
+            document.documentElement.style.setProperty('--rsvp-scale', scale);
+            this.tuningScaleSlider.value = scale;
+            this.tuningScaleValue.textContent = `${scale.toFixed(1)}×`;
+            // Apply WPM to tuning slider
+            this.tuningWpmSlider.value = this.settings.defaultWPM;
+            this.tuningWpmValue.textContent = `${this.settings.defaultWPM} wpm`;
+        }
+
+        async setFontSize(size) {
+            this.settings.fontSize = parseInt(size);
+            document.documentElement.style.setProperty('--word-font-size', `${size}px`);
+            this.fontSizeLabel.textContent = `${size}px`;
+            await this.persistence.saveSetting('fontSize', this.settings.fontSize);
+            // Re-align word after font size change
+            requestAnimationFrame(() => this.alignWordToPivot());
+        }
+
+        async setDefaultWPM(wpm) { this.settings.defaultWPM = parseInt(wpm); await this.persistence.saveSetting('defaultWPM', this.settings.defaultWPM); }
+        async setShowGuides(show) { this.settings.showGuides = show; this.rsvpDisplay.classList.toggle('hide-guides', !show); await this.persistence.saveSetting('showGuides', show); }
+        async setFlowMode(enabled) { this.settings.flowMode = enabled; this.readerView.classList.toggle('flow-mode', enabled); await this.persistence.saveSetting('flowMode', enabled); }
+        async setMode(mode) { this.settings.mode = mode; this.playback.setMode(mode); this.modeToggleBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode)); await this.persistence.saveSetting('mode', mode); }
+        async setFontFamily(fontFamily) { this.settings.fontFamily = fontFamily; document.documentElement.style.setProperty('--rsvp-word-font', fontFamily); await this.persistence.saveSetting('fontFamily', fontFamily); }
+
+        getDefaultScale() {
+            const width = window.innerWidth;
+            // iPhone: larger default for one-handed readability
+            if (width <= 428) return 1.15;
+            // iPad: slightly smaller
+            if (width <= 1024) return 1.0;
+            // Desktop: standard
+            return 1.0;
+        }
+
+        // Snap WPM to nearest detent (25 for slow speeds, 50 for fast)
+        snapWpm(wpm) {
+            if (wpm <= 200) {
+                // Slow speeds: snap to 25
+                return Math.round(wpm / 25) * 25;
+            } else if (wpm <= 400) {
+                // Medium speeds: snap to 25
+                return Math.round(wpm / 25) * 25;
+            } else {
+                // Fast speeds: snap to 50
+                return Math.round(wpm / 50) * 50;
+            }
+        }
+
+        // Show brief jump indicator
+        showJumpIndicator(jump) {
+            // Create temporary indicator if not exists
+            let indicator = document.getElementById('jump-indicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'jump-indicator';
+                indicator.className = 'jump-indicator';
+                this.rsvpDisplay.appendChild(indicator);
+            }
+            indicator.textContent = jump > 0 ? `+${jump}` : `${jump}`;
+            indicator.classList.add('visible');
+            setTimeout(() => indicator.classList.remove('visible'), 600);
+        }
+
+        async setScale(scale) {
+            this.settings.fontScale = Math.max(0.5, Math.min(1.8, scale));
+            document.documentElement.style.setProperty('--rsvp-scale', this.settings.fontScale);
+            this.tuningScaleSlider.value = this.settings.fontScale;
+            this.tuningScaleValue.textContent = `${this.settings.fontScale.toFixed(1)}×`;
+            await this.persistence.saveSetting('fontScale', this.settings.fontScale);
+            // Re-align word after scale change
+            requestAnimationFrame(() => this.alignWordToPivot());
+        }
+
+        // Position guide system according to strict rules:
+        // - Two continuous horizontal lines (no gaps)
+        // - Two very short vertical ticks at ORP anchor, pointing inward
+        // - Word aligns to guides, not vice versa
+        updateGuidePositions() {
+            if (!this.wordPivot || !this.rsvpDisplay || !this.settings.showGuides) return;
+
+            const stageRect = this.rsvpDisplay.getBoundingClientRect();
+            const pivotRect = this.wordPivot.getBoundingClientRect();
+
+            // Word vertical bounds from pivot element
+            const wordTop = pivotRect.top - stageRect.top;
+            const wordBottom = pivotRect.bottom - stageRect.top;
+            const wordHeight = wordBottom - wordTop;
+
+            // Padding scales with font size (proportional to word height)
+            const pad = wordHeight * 0.35;
+
+            // Horizontal line Y positions
+            const topLineY = wordTop - pad;
+            const bottomLineY = wordBottom + pad;
+
+            // ORP anchor X is fixed at 50% of stage (constant)
+            const orpAnchorX = stageRect.width / 2;
+
+            // Tick dimensions - very short notches
+            const tickHeight = 8;
+            const tickWidth = 1;
+
+            // === HORIZONTAL LINES ===
+            // Continuous, full-width, no gaps
+
+            this.guideTop.style.top = `${topLineY}px`;
+            this.guideTop.style.left = '0';
+            this.guideTop.style.width = '100%';
+            this.guideTop.style.height = '1px';
+
+            this.guideBottom.style.top = `${bottomLineY}px`;
+            this.guideBottom.style.left = '0';
+            this.guideBottom.style.width = '100%';
+            this.guideBottom.style.height = '1px';
+
+            // === VERTICAL TICKS ===
+            // Very short, attached to horizontals, pointing inward toward ORP
+            // Centered on ORP anchor X, do NOT move
+
+            // Top tick: hangs down from top line
+            this.guideTickTop.style.left = `${orpAnchorX}px`;
+            this.guideTickTop.style.top = `${topLineY}px`;
+            this.guideTickTop.style.width = `${tickWidth}px`;
+            this.guideTickTop.style.height = `${tickHeight}px`;
+            this.guideTickTop.style.transform = 'translateX(-50%)';
+
+            // Bottom tick: extends up from bottom line
+            this.guideTickBottom.style.left = `${orpAnchorX}px`;
+            this.guideTickBottom.style.top = `${bottomLineY - tickHeight}px`;
+            this.guideTickBottom.style.width = `${tickWidth}px`;
+            this.guideTickBottom.style.height = `${tickHeight}px`;
+            this.guideTickBottom.style.transform = 'translateX(-50%)';
+        }
+
+        // Long press handling
+        startLongPress(e) {
+            // Don't trigger on controls, overlays, or header
+            if (e.target.closest('.reader-controls') || e.target.closest('.reader-header') || e.target.closest('.tuning-overlay') || e.target.closest('.quick-adjust-overlay')) {
+                return;
+            }
+            this.longPressTimer = setTimeout(() => {
+                this.showTuningOverlay();
+            }, this.longPressDuration);
+        }
+
+        cancelLongPress() {
+            if (this.longPressTimer) {
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+            }
+        }
+
+        showTuningOverlay() {
+            // Pause playback while tuning
+            if (this.playback.isPlaying) {
+                this.playback.pause();
+            }
+            // Sync slider values with current state
+            this.tuningWpmSlider.value = this.playback.wpm;
+            this.tuningWpmValue.textContent = `${this.playback.wpm} wpm`;
+            this.tuningScaleSlider.value = this.settings.fontScale;
+            this.tuningScaleValue.textContent = `${this.settings.fontScale.toFixed(1)}×`;
+
+            // Show/hide "Skip to Content" button
+            const hasSkipTarget = this.currentDocument?.firstProseWordIndex > 0 &&
+                                  this.playback.currentIndex < this.currentDocument.firstProseWordIndex;
+            this.skipToContentBtn.style.display = hasSkipTarget ? 'block' : 'none';
+
+            // Show overlay
+            this.tuningOverlay.classList.add('visible');
+            // Auto-hide after 3 seconds of inactivity
+            this.resetTuningTimeout();
+        }
+
+        skipToContent() {
+            if (!this.currentDocument?.firstProseWordIndex) return;
+            const targetIndex = this.currentDocument.firstProseWordIndex;
+            this.playback.seek(targetIndex);
+            this.showJumpIndicator(`→ Ch.1`);
+        }
+
+        hideTuningOverlay() {
+            this.tuningOverlay.classList.remove('visible');
+            if (this.tuningTimeout) {
+                clearTimeout(this.tuningTimeout);
+                this.tuningTimeout = null;
+            }
+        }
+
+        resetTuningTimeout() {
+            if (this.tuningTimeout) clearTimeout(this.tuningTimeout);
+            this.tuningTimeout = setTimeout(() => {
+                this.hideTuningOverlay();
+            }, 3000);
+        }
+
+        openSettings() { this.settingsPanel.classList.add('open'); }
+        closeSettings() { this.settingsPanel.classList.remove('open'); }
+
+        toggleQuickAdjust() {
+            const isHidden = this.quickAdjustOverlay.classList.contains('hidden');
+            if (isHidden) {
+                // Hide tuning overlay if visible
+                this.hideTuningOverlay();
+                // Show overlay - sync current values
+                this.quickFontSlider.value = this.settings.fontSize;
+                this.quickFontLabel.textContent = `${this.settings.fontSize}px`;
+                this.quickWpmSlider.value = this.playback.wpm;
+                this.quickWpmLabel.textContent = this.playback.wpm;
+                this.quickAdjustOverlay.classList.remove('hidden');
+                this.quickAdjustBtn.classList.add('active');
+            } else {
+                // Hide overlay
+                this.quickAdjustOverlay.classList.add('hidden');
+                this.quickAdjustBtn.classList.remove('active');
+            }
+        }
+
+        hideQuickAdjust() {
+            this.quickAdjustOverlay.classList.add('hidden');
+            this.quickAdjustBtn.classList.remove('active');
+        }
+
+        // Fullscreen / Focus Mode
+        // Track focus mode state separately from browser fullscreen
+        focusModeActive = false;
+
+        toggleFullscreen() {
+            // Check if real fullscreen is supported and enabled
+            const fullscreenSupported = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+            const isRealFullscreen = this.isFullscreen();
+
+            if (isRealFullscreen) {
+                // Currently in real fullscreen - exit it
+                this.exitFullscreen();
+            } else if (fullscreenSupported) {
+                // Fullscreen supported - try to enter it
+                this.enterFullscreen();
+            } else {
+                // Fullscreen not supported (iOS Safari) - toggle Focus Mode instead
+                this.toggleFocusMode();
+            }
+        }
+
+        isFullscreen() {
+            return !!(document.fullscreenElement || document.webkitFullscreenElement);
+        }
+
+        enterFullscreen() {
+            const elem = document.documentElement;
+            const request = elem.requestFullscreen || elem.webkitRequestFullscreen;
+            if (request) {
+                request.call(elem).then(() => {
+                    // Successfully entered fullscreen - enable focus mode
+                    this.enableFocusMode();
+                }).catch(() => {
+                    // Fullscreen request failed - fall back to focus mode toggle
+                    this.toggleFocusMode();
+                });
+            } else {
+                // No fullscreen API - fall back to focus mode toggle
+                this.toggleFocusMode();
+            }
+        }
+
+        exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+            // Focus mode will be disabled by updateFullscreenUI via fullscreenchange event
+        }
+
+        updateFullscreenUI() {
+            const isFullscreen = this.isFullscreen();
+            // When exiting real fullscreen, also disable focus mode
+            if (!isFullscreen && this.focusModeActive) {
+                this.disableFocusMode();
+            }
+            this.updateFocusModeIcons();
+        }
+
+        toggleFocusMode() {
+            if (this.focusModeActive) {
+                this.disableFocusMode();
+            } else {
+                this.enableFocusMode();
+            }
+        }
+
+        enableFocusMode() {
+            this.focusModeActive = true;
+            this.readerView?.classList.add('focus-mode');
+            this.updateFocusModeIcons();
+        }
+
+        disableFocusMode() {
+            this.focusModeActive = false;
+            this.readerView?.classList.remove('focus-mode');
+            this.updateFocusModeIcons();
+        }
+
+        updateFocusModeIcons() {
+            const showCollapse = this.focusModeActive || this.isFullscreen();
+            this.iconExpand.style.display = showCollapse ? 'none' : 'block';
+            this.iconCollapse.style.display = showCollapse ? 'block' : 'none';
+        }
+
+        // Auto-hide controls during playback
+        resetAutoHideTimer() {
+            // Always restore controls visibility immediately
+            this.readerControls?.classList.remove('auto-dimmed');
+
+            // Clear any existing timer
+            if (this.autoHideTimer) {
+                clearTimeout(this.autoHideTimer);
+                this.autoHideTimer = null;
+            }
+
+            // Only set new timer if playing and no overlays open
+            if (this.playback?.isPlaying && !this.isAnyOverlayOpen()) {
+                this.autoHideTimer = setTimeout(() => {
+                    this.dimControls();
+                }, this.autoHideDelay);
+            }
+        }
+
+        dimControls() {
+            // Only dim if still playing and no overlays open
+            if (this.playback?.isPlaying && !this.isAnyOverlayOpen()) {
+                this.readerControls?.classList.add('auto-dimmed');
+            }
+        }
+
+        isAnyOverlayOpen() {
+            return this.settingsPanel?.classList.contains('open') ||
+                   this.tuningOverlay?.classList.contains('visible') ||
+                   !this.quickAdjustOverlay?.classList.contains('hidden');
+        }
+
+        async clearLibrary() {
+            if (!confirm('Delete all documents from library?')) return;
+            const docs = await this.persistence.getRecentDocuments(100);
+            console.log(`[clearLibrary] Deleting ${docs.length} documents...`);
+            for (const doc of docs) await this.persistence.deleteDocument(doc.id);
+            console.log('[clearLibrary] Library cleared');
+            this.loadLibrary();
+            this.closeSettings();
+        }
+
+        showLoading(text = 'Loading...') { this.loadingText.textContent = text; this.loadingOverlay.classList.add('show'); }
+        hideLoading() { this.loadingOverlay.classList.remove('show'); }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        window.app = new SpeedReaderApp();
+    });
+
+    // Register Service Worker for PWA/offline support
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('SW registered:', registration.scope);
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New version available
+                                console.log('New version available');
+                            }
+                        });
+                    });
+                })
+                .catch(err => console.log('SW registration failed:', err));
+        });
+    }
+    </script>
+</body>
+</html>
