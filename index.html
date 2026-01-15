@@ -31,6 +31,31 @@
                     <span class="import-hint">EPUB, PDF, TXT, HTML — tap or drop</span>
                 </div>
                 <input type="file" id="file-input" accept=".epub,.pdf,.txt,.html,.htm">
+
+                <div class="url-import-row">
+                    <button id="paste-url-btn" class="url-import-button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        <span>Paste URL</span>
+                    </button>
+                    <div class="proxy-status" id="proxy-status">
+                        <span class="proxy-dot"></span>
+                        <span class="proxy-label">Proxy</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- URL Input Modal (fallback when clipboard blocked) -->
+            <div id="url-modal" class="url-modal hidden">
+                <div class="url-modal-content">
+                    <input type="url" id="url-input" class="url-input" placeholder="https://example.com/article">
+                    <div class="url-modal-actions">
+                        <button id="url-cancel-btn" class="url-modal-btn">Cancel</button>
+                        <button id="url-load-btn" class="url-modal-btn primary">Load</button>
+                    </div>
+                </div>
             </div>
 
             <div class="recent-section">
@@ -1109,6 +1134,13 @@
             this.readerControls = document.querySelector('.reader-controls');
             this.autoHideTimer = null;
             this.autoHideDelay = 2500; // 2.5 seconds
+            // URL import elements
+            this.pasteUrlBtn = document.getElementById('paste-url-btn');
+            this.proxyStatus = document.getElementById('proxy-status');
+            this.urlModal = document.getElementById('url-modal');
+            this.urlInput = document.getElementById('url-input');
+            this.urlCancelBtn = document.getElementById('url-cancel-btn');
+            this.urlLoadBtn = document.getElementById('url-load-btn');
         }
 
         initPlayback() {
@@ -1344,6 +1376,18 @@
             window.addEventListener('resize', () => {
                 requestAnimationFrame(() => this.alignWordToPivot());
             });
+
+            // URL import
+            this.pasteUrlBtn.addEventListener('click', () => this.handlePasteUrl());
+            this.urlCancelBtn.addEventListener('click', () => this.hideUrlModal());
+            this.urlLoadBtn.addEventListener('click', () => this.loadUrlFromModal());
+            this.urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.loadUrlFromModal();
+                if (e.key === 'Escape') this.hideUrlModal();
+            });
+
+            // Check proxy health on startup
+            this.checkProxyHealth();
         }
 
         handleKeydown(e) {
@@ -1447,6 +1491,197 @@
 
             this.fileInput.value = '';
         }
+
+        // ==================== URL IMPORT ====================
+
+        async checkProxyHealth() {
+            this.proxyStatus.classList.remove('reachable', 'unreachable');
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 3000);
+                const res = await fetch('https://r.jina.ai/https://example.com', {
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+                if (res.ok) {
+                    this.proxyStatus.classList.add('reachable');
+                    console.log('[Proxy] Health check passed');
+                } else {
+                    this.proxyStatus.classList.add('unreachable');
+                    console.log('[Proxy] Health check failed:', res.status);
+                }
+            } catch (e) {
+                this.proxyStatus.classList.add('unreachable');
+                console.log('[Proxy] Health check failed:', e.message);
+            }
+        }
+
+        async handlePasteUrl() {
+            // Re-check proxy health when user taps button
+            this.checkProxyHealth();
+
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && (text.startsWith('http://') || text.startsWith('https://') || text.includes('.'))) {
+                    this.importUrl(text.trim());
+                } else {
+                    this.showUrlModal();
+                }
+            } catch (e) {
+                // Clipboard blocked - show modal
+                this.showUrlModal();
+            }
+        }
+
+        showUrlModal() {
+            this.urlInput.value = '';
+            this.urlModal.classList.remove('hidden');
+            this.urlInput.focus();
+        }
+
+        hideUrlModal() {
+            this.urlModal.classList.add('hidden');
+        }
+
+        loadUrlFromModal() {
+            const url = this.urlInput.value.trim();
+            if (url) {
+                this.hideUrlModal();
+                this.importUrl(url);
+            }
+        }
+
+        async importUrl(url) {
+            // Auto-prefix https if missing scheme
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            // Validate URL
+            try {
+                new URL(url);
+            } catch (e) {
+                alert('Invalid URL');
+                return;
+            }
+
+            console.log('[URL Import]', url);
+            this.showLoading('Fetching article...');
+
+            try {
+                const proxied = 'https://r.jina.ai/' + url;
+                const res = await fetch(proxied, { cache: 'no-store' });
+
+                if (!res.ok) {
+                    throw new Error(`Proxy returned ${res.status}`);
+                }
+
+                let text = await res.text();
+
+                // Strip Jina metadata header (lines starting with Title:, URL:, etc.)
+                text = this.cleanProxyOutput(text);
+
+                if (!text.trim()) {
+                    throw new Error('No readable text found');
+                }
+
+                // Extract title from first non-empty line or use hostname
+                const title = this.extractTitle(text, url);
+
+                this.showLoading('Tokenizing...');
+                this.tokens = tokenize(text, this.settings.mode);
+
+                if (this.tokens.length === 0) {
+                    throw new Error('No readable content extracted (0 words)');
+                }
+
+                const docId = 'url-' + Date.now();
+                const hostname = new URL(url).hostname;
+
+                const docRecord = {
+                    id: docId,
+                    title: title,
+                    author: hostname,
+                    sourceType: 'url',
+                    fileName: url,
+                    fileSize: text.length,
+                    wordCount: this.tokens.length,
+                    firstProseWordIndex: 0,
+                    addedAt: Date.now(),
+                    lastOpened: Date.now(),
+                    progress: { currentIndex: 0, wpm: this.settings.defaultWPM, mode: this.settings.mode, updatedAt: Date.now() }
+                };
+
+                await this.persistence.saveDocument(docRecord);
+                await this.persistence.saveTokens(docId, this.tokens);
+                this.currentDocument = docRecord;
+
+                this.hideLoading();
+                this.openReader(docRecord);
+
+            } catch (error) {
+                console.error('[URL Import] Error:', error);
+                this.hideLoading();
+                if (error.message.includes('Proxy') || error.name === 'TypeError') {
+                    alert('Proxy unreachable. Check your connection.');
+                } else {
+                    alert('Error: ' + error.message);
+                }
+            }
+        }
+
+        cleanProxyOutput(text) {
+            // Jina returns markdown with metadata header
+            // Strip leading metadata lines (Title:, URL:, Markdown Content:, etc.)
+            const lines = text.split('\n');
+            let startIndex = 0;
+
+            // Skip metadata header lines
+            for (let i = 0; i < Math.min(lines.length, 20); i++) {
+                const line = lines[i].trim();
+                if (line.startsWith('Title:') || line.startsWith('URL:') ||
+                    line.startsWith('Markdown Content:') || line.startsWith('Source:') ||
+                    line === '' || line.startsWith('---')) {
+                    startIndex = i + 1;
+                } else {
+                    break;
+                }
+            }
+
+            let content = lines.slice(startIndex).join('\n');
+
+            // Normalize whitespace: collapse multiple newlines to double, trim lines
+            content = content
+                .replace(/\r\n/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .replace(/[ \t]+/g, ' ')
+                .trim();
+
+            return content;
+        }
+
+        extractTitle(text, url) {
+            // Look for first heading (# line) or first non-empty line
+            const lines = text.split('\n');
+            for (const line of lines.slice(0, 10)) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('#')) {
+                    return trimmed.replace(/^#+\s*/, '').trim();
+                }
+                if (trimmed.length > 5 && trimmed.length < 200) {
+                    return trimmed;
+                }
+            }
+            // Fallback to hostname
+            try {
+                return new URL(url).hostname.replace(/^www\./, '');
+            } catch {
+                return 'Web Article';
+            }
+        }
+
+        // ==================== END URL IMPORT ====================
 
         renderWord(token) {
             if (!token) {
