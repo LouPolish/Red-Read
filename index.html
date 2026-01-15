@@ -582,8 +582,8 @@
                 // displayWord: cleaned for display, keeps apostrophes for contractions
                 const displayWord = cleanForDisplay(word);
 
-                // Skip if no letters after cleaning
-                if (!displayWord || !/[a-zA-Z]/.test(displayWord)) continue;
+                // Skip if no letters or numbers after cleaning
+                if (!displayWord || !/[a-zA-Z0-9]/.test(displayWord)) continue;
 
                 // Punctuation from original word drives timing only
                 const flags = {
@@ -1063,7 +1063,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260115e';
+    const BUILD_ID = '20260115f';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1699,12 +1699,20 @@
             text = text.replace(/^-+$/gm, ''); // horizontal rules
             text = text.replace(/^\s*(Contents|move to sidebar hide|Toggle.*subsection)\s*$/gim, '');
 
-            // 1) Strip markdown link syntax: [text](url) -> text + space
-            // Match [text](...) where ... contains URL-like chars (no spaces, has / or . or :)
-            // This avoids matching prose like "word (born 1958)" which has spaces in parens
-            text = text.replace(/\[([^\]]*)\]\(([^)\s]*[/:.])[^)]*\)/g, '$1 ');
+            // 1) Strip markdown link syntax: [text](url) or [text](url "title") -> text + space
+            // Jina returns format like: [Police Academy](https://..._(film) "Police Academy (film)")
+            // The URL can have parentheses (Wikipedia style) and there may be a quoted title
+            // Strategy: match [text]( then everything up to ) that's followed by end-of-link context
+            // First handle links with title: [text](url "title")
+            text = text.replace(/\[([^\]]*)\]\([^"]*"[^"]*"\)/g, '$1 ');
 
-            // 2) Also catch any remaining [...](something) patterns - but only if no space in parens
+            // Then handle standard links: [text](url) - be greedy to catch nested parens in URLs
+            // Match URLs that start with http, /, or # and consume everything to final )
+            text = text.replace(/\[([^\]]*)\]\(https?:\/\/[^)]*\)/g, '$1 ');
+            text = text.replace(/\[([^\]]*)\]\(\/[^)]*\)/g, '$1 ');
+            text = text.replace(/\[([^\]]*)\]\(#[^)]*\)/g, '$1 ');
+
+            // 2) Catch any remaining [...](something) patterns - only if looks like a link (no spaces)
             text = text.replace(/\[([^\]]*)\]\([^)\s]+\)/g, '$1 ');
 
             // 3) Strip any remaining bare URLs
