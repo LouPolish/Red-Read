@@ -1679,8 +1679,18 @@
 
         // Normalize proxy text: filter Wikipedia/nav boilerplate, keep article prose
         normalizeProxyText(text, sourceUrl) {
+            // 1) Strip URLs and wiki links early (before they become glued tokens)
+            text = text.replace(/https?:\/\/[^\s\]\)]+/gi, '');
+            text = text.replace(/www\.[^\s\]\)]+/gi, '');
+            text = text.replace(/[a-z]{2,3}\.wikipedia\.org\/wiki\/[^\s\]\)]+/gi, '');
+            // Strip markdown link syntax leaving just the text: [text](url) -> text
+            text = text.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+
             const lines = text.split('\n');
             const kept = [];
+
+            // Check if this is Wikipedia
+            const isWikipedia = sourceUrl && /wikipedia\.org/i.test(sourceUrl);
 
             // Boilerplate patterns to drop (case-insensitive)
             const boilerplatePatterns = [
@@ -1695,7 +1705,9 @@
                 /^special pages$/i, /^permanent link$/i, /^page information$/i,
                 /^cite this page$/i, /^wikidata item$/i, /^download as pdf$/i,
                 /^\[edit\]$/i, /^edit$/i, /^hide$/i, /^show$/i,
-                /^\d+ languages?$/i, /^read$/i, /^view (history|source)$/i
+                /^\d+ languages?$/i, /^read$/i, /^view (history|source)$/i,
+                /^article$/i, /^featured article$/i, /^good article$/i,
+                /^coordinates$/i, /^toggle.*sidebar$/i, /^move to sidebar$/i
             ];
 
             // Stop headings (end of main content)
@@ -1706,8 +1718,38 @@
                 /^references$/i, /^external links$/i, /^see also$/i, /^further reading$/i
             ];
 
-            for (const line of lines) {
-                const trimmed = line.trim();
+            // 2) For Wikipedia, find the lead paragraph first
+            let foundLead = false;
+            let leadLineIndex = -1;
+
+            if (isWikipedia) {
+                // Lead paragraph indicators: "is a/an", "was a/an", "born", "(born", "are a"
+                // Plus must have sentence punctuation and be reasonably long
+                for (let i = 0; i < lines.length; i++) {
+                    const trimmed = lines[i].trim();
+                    if (!trimmed) continue;
+
+                    // Skip obvious boilerplate
+                    if (boilerplatePatterns.some(p => p.test(trimmed))) continue;
+
+                    // Lead paragraph heuristic: contains biographical/definitional phrases
+                    const hasLeadPattern = /\b(is an?|was an?|are an?|born|refers to|describes)\b/i.test(trimmed);
+                    const hasSentencePunct = /[.?!]/.test(trimmed);
+                    const isLongEnough = trimmed.length >= 60;
+
+                    if (hasLeadPattern && hasSentencePunct && isLongEnough) {
+                        foundLead = true;
+                        leadLineIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Start from lead paragraph if found, otherwise from beginning
+            const startIndex = foundLead ? leadLineIndex : 0;
+
+            for (let i = startIndex; i < lines.length; i++) {
+                const trimmed = lines[i].trim();
 
                 // Skip empty lines (will rejoin with double newlines)
                 if (!trimmed) continue;
@@ -1715,22 +1757,22 @@
                 // Stop at reference/external links sections
                 if (stopHeadings.some(p => p.test(trimmed))) break;
 
-                // Skip boilerplate
-                if (boilerplatePatterns.some(p => p.test(trimmed))) continue;
+                // Skip boilerplate (but not if it's our lead line)
+                if (i !== leadLineIndex && boilerplatePatterns.some(p => p.test(trimmed))) continue;
 
                 // Skip short navigation-like lines (< 30 chars, no sentence punctuation)
                 if (trimmed.length < 30 && !/[.?!]/.test(trimmed)) continue;
 
-                // Skip markdown image/link-only lines
-                if (/^!\[.*\]\(.*\)$/.test(trimmed)) continue;
-                if (/^\[.*\]\(.*\)$/.test(trimmed) && trimmed.length < 80) continue;
+                // Skip lines that are mostly non-letter characters (nav junk)
+                const letterRatio = (trimmed.match(/[a-zA-Z]/g) || []).length / trimmed.length;
+                if (letterRatio < 0.5 && trimmed.length < 100) continue;
 
-                // Keep paragraph-like lines: >= 80 chars with punctuation OR >= 12 words
+                // Keep paragraph-like lines: >= 60 chars with punctuation OR >= 10 words
                 const wordCount = trimmed.split(/\s+/).length;
                 const hasSentencePunct = /[.?!]/.test(trimmed);
                 const isHeading = /^#{1,6}\s/.test(trimmed);
 
-                if (isHeading || (trimmed.length >= 80 && hasSentencePunct) || wordCount >= 12) {
+                if (isHeading || (trimmed.length >= 60 && hasSentencePunct) || wordCount >= 10) {
                     kept.push(trimmed);
                 }
             }
@@ -1740,6 +1782,9 @@
             result = result.replace(/\s*\[\d+\]/g, '');
             result = result.replace(/\s*\[citation needed\]/gi, '');
             result = result.replace(/\s*\[edit\]/gi, '');
+            // Clean up any remaining empty brackets or double spaces
+            result = result.replace(/\[\s*\]/g, '');
+            result = result.replace(/\s{2,}/g, ' ');
 
             return result.trim();
         }
