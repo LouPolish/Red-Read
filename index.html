@@ -1685,7 +1685,21 @@
             text = text.replace(/[a-z]{2,3}\.wikipedia\.org\/wiki\/[^\s\]\)]+/gi, '');
             // Strip markdown link syntax leaving just the text: [text](url) -> text + space
             text = text.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1 ');
-            // Collapse multiple spaces after link conversion
+
+            // 2) Clean up residual wiki path/slug artifacts after link conversion
+            // Remove /wiki/... paths that leaked through
+            text = text.replace(/\/wiki\/[^\s\]\)]+/gi, ' ');
+            // Remove wiki/... without leading slash
+            text = text.replace(/\bwiki\/[^\s\]\)]+/gi, ' ');
+            // Remove title=... query params
+            text = text.replace(/\btitle=[^\s&\]\)]+/gi, ' ');
+            // Remove slug disambiguators like _(film) or _(TV_series) attached to words
+            // These come from URL paths, not prose (prose would have space before paren)
+            text = text.replace(/_\([^)]+\)/g, ' ');
+            // Remove underscores that came from URL slugs (replace with space)
+            text = text.replace(/_/g, ' ');
+
+            // Collapse multiple spaces after all cleanup
             text = text.replace(/  +/g, ' ');
 
             const lines = text.split('\n');
