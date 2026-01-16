@@ -213,22 +213,17 @@
                 </div>
 
                 <div class="playback-row">
-                    <!-- Prev chapter (outer left, hidden for non-EPUB) -->
-                    <button id="prev-chapter-btn" class="control-button chapter-button" aria-label="Previous chapter" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/>
-                        </svg>
-                    </button>
-                    <!-- Ramp state indicator (toggles ramp on/off) - between chapter and rewind -->
+                    <!-- Ramp state indicator (embedded status light, left edge) -->
                     <button id="ramp-state-indicator" class="ramp-state-indicator" aria-label="Toggle ramp mode">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <polyline points="4 17 10 11 14 15 20 9"/>
                             <polyline points="14 9 20 9 20 15"/>
                         </svg>
                     </button>
-                    <button id="rewind-btn" class="control-button" aria-label="Rewind 10 words">
+                    <!-- Prev chapter (outer left, hidden for non-EPUB) -->
+                    <button id="prev-chapter-btn" class="control-button chapter-button" aria-label="Previous chapter" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.5 3C17.15 3 21.08 6.03 22.47 10.22L20.1 11C19.05 7.81 16.04 5.5 12.5 5.5C10.54 5.5 8.77 6.22 7.38 7.38L10 10H3V3L5.6 5.6C7.45 4 9.85 3 12.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.11 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
+                            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/>
                         </svg>
                     </button>
                     <button id="prev-btn" class="control-button" aria-label="Previous word">
@@ -1606,7 +1601,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260116t';
+    const BUILD_ID = '20260116u';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1658,7 +1653,6 @@
             this.iconPause = document.getElementById('icon-pause');
             this.prevBtn = document.getElementById('prev-btn');
             this.nextBtn = document.getElementById('next-btn');
-            this.rewindBtn = document.getElementById('rewind-btn');
             this.settingsPanel = document.getElementById('settings-panel');
             this.closeSettingsBtn = document.getElementById('close-settings');
             this.fontSizeSetting = document.getElementById('font-size-setting');
@@ -1866,7 +1860,6 @@
             this.playBtn.addEventListener('click', () => { Haptics.tap(); this.handlePlayPause(); });
             this.prevBtn.addEventListener('click', () => { Haptics.tap(); this.playback.step(-1); });
             this.nextBtn.addEventListener('click', () => { Haptics.tap(); this.playback.step(1); });
-            this.rewindBtn.addEventListener('click', () => { Haptics.tap(); this.playback.rewind(10); });
             this.progressSlider.addEventListener('input', (e) => this.playback.seekPercent(parseFloat(e.target.value)));
             // Chapter navigation controls
             this.prevChapterBtn.addEventListener('click', () => { Haptics.tap(); this.jumpToChapter(-1); });
