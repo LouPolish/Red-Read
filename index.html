@@ -206,6 +206,14 @@
 
             <!-- Controls -->
             <div class="reader-controls">
+                <!-- Ramp state indicator (embedded status light, positioned in control bar) -->
+                <button id="ramp-state-indicator" class="ramp-state-indicator" aria-label="Toggle ramp mode">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="4 17 10 11 14 15 20 9"/>
+                        <polyline points="14 9 20 9 20 15"/>
+                    </svg>
+                </button>
+
                 <div class="progress-row">
                     <span id="progress-current" class="progress-text">0</span>
                     <input type="range" id="progress-slider" class="progress-slider" min="0" max="100" value="0">
@@ -213,13 +221,6 @@
                 </div>
 
                 <div class="playback-row">
-                    <!-- Ramp state indicator (embedded status light, left edge) -->
-                    <button id="ramp-state-indicator" class="ramp-state-indicator" aria-label="Toggle ramp mode">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="4 17 10 11 14 15 20 9"/>
-                            <polyline points="14 9 20 9 20 15"/>
-                        </svg>
-                    </button>
                     <!-- Prev chapter (outer left, hidden for non-EPUB) -->
                     <button id="prev-chapter-btn" class="control-button chapter-button" aria-label="Previous chapter" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -1601,7 +1602,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260116w';
+    const BUILD_ID = '20260116x';
 
     // ============================================================
     // MAIN APPLICATION
