@@ -1372,7 +1372,6 @@ body {
     .ramp-state-indicator {
         width: 30px;
         height: 30px;
-        left: 8px;
     }
 
     .ramp-state-indicator svg {
@@ -1900,9 +1899,8 @@ body {
 }
 
 /* Ramp state indicator in control bar (interactive toggle) */
+/* Inline in playback row, between chapter-back and rewind */
 .ramp-state-indicator {
-    position: absolute;
-    left: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1915,30 +1913,30 @@ body {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     color: var(--text-muted);
+    flex-shrink: 0;
 }
 
 .ramp-state-indicator svg {
     width: 17px;
     height: 17px;
     stroke: currentColor;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
-/* Ramp enabled (but not actively ramping) - red outline, ready state */
+/* Ramp enabled (configured but not running) - red outline + red icon */
 .ramp-state-indicator.enabled {
     border-color: var(--accent);
     color: var(--accent);
 }
 
 .ramp-state-indicator.enabled svg {
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
-/* Ramp actively running - solid red background */
+/* Ramp actively running - red circle with white arrow icon */
 .ramp-state-indicator.active {
     background: var(--accent);
     border-color: var(--accent);
-    color: white;
 }
 
 .ramp-state-indicator.active svg {
