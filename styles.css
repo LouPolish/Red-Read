@@ -1368,18 +1368,6 @@ body {
         height: 14px;
     }
 
-    /* Ramp indicator slightly smaller on tiny screens */
-    .ramp-state-indicator {
-        width: 22px;
-        height: 22px;
-        left: 6px;
-    }
-
-    .ramp-state-indicator svg {
-        width: 12px;
-        height: 12px;
-    }
-
     .wpm-button {
         padding: 0 12px;
         font-size: 12px;
@@ -1899,33 +1887,20 @@ body {
     font-size: 12px;
 }
 
-/* Ramp state indicator - embedded status light at left edge of control bar */
-/* Positioned relative to .reader-controls, aligned with playback row */
+/* Ramp state indicator - inner utility ring (left side, mirrors info button on right) */
+/* Uses control-button base styles, then overrides for special visual treatment */
 .ramp-state-indicator {
-    position: absolute;
-    left: 8px;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
+    /* Inherits from .control-button: size, flex, border-radius */
     background: transparent;
     border: 1.5px solid var(--text-muted);
     border-left-color: transparent;
     border-right-color: transparent;
-    border-radius: 50%;
-    padding: 0;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
     opacity: 0.5;
 }
 
 .ramp-state-indicator svg {
-    width: 14px;
-    height: 14px;
     stroke: var(--text-muted);
-    opacity: 0.7;
+    fill: none;
 }
 
 /* Ramp enabled (configured but not running) - red outline + red icon */
@@ -1937,7 +1912,6 @@ body {
 
 .ramp-state-indicator.enabled svg {
     stroke: var(--accent);
-    opacity: 0.9;
 }
 
 /* Ramp actively running - red outline + white arrow (activity cue) */
@@ -1949,7 +1923,6 @@ body {
 
 .ramp-state-indicator.active svg {
     stroke: white;
-    opacity: 1;
 }
 
 .ramp-state-indicator:active {
