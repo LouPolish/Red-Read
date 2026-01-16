@@ -16,7 +16,7 @@
         <!-- Library View -->
         <div id="library-view" class="view active">
             <header class="library-header">
-                <h1>Red Read</h1>
+                <h1><span class="accent-text">Red</span> Read</h1>
                 <p class="subtitle">RSVP Reading Engine</p>
                 <span id="version-label" class="version-label"></span>
             </header>
@@ -66,14 +66,70 @@
                 </div>
             </div>
 
+            <!-- Ramp Mode indicator (shown when enabled) -->
+            <div id="ramp-indicator" class="ramp-indicator" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <polyline points="4 17 10 11 14 15 20 9"/>
+                    <polyline points="14 9 20 9 20 15"/>
+                </svg>
+                <span id="ramp-indicator-text">Ramp: 250 → 450 (5m)</span>
+            </div>
+
             <footer class="library-footer">
-                <button id="settings-btn" class="icon-button" aria-label="Settings">
+                <button id="ramp-btn" class="icon-button" aria-label="Ramp Mode">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                        <polyline points="4 17 10 11 14 15 20 9"/>
+                        <polyline points="14 9 20 9 20 15"/>
+                    </svg>
+                </button>
+                <button id="settings-btn" class="icon-button" aria-label="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
                     </svg>
                 </button>
             </footer>
+
+            <!-- Ramp Settings Modal -->
+            <div id="ramp-modal" class="ramp-modal hidden">
+                <div class="ramp-modal-content">
+                    <header class="ramp-modal-header">
+                        <h3>Ramp Mode</h3>
+                        <p class="ramp-hint">Gradually increase speed during reading</p>
+                    </header>
+
+                    <div class="ramp-setting">
+                        <label class="ramp-label">
+                            <input type="checkbox" id="ramp-enabled">
+                            <span>Enable Ramp</span>
+                        </label>
+                    </div>
+
+                    <div class="ramp-setting">
+                        <label class="ramp-label-text">Start WPM</label>
+                        <input type="number" id="ramp-start-wpm" class="ramp-input" min="100" max="900" step="25" value="200">
+                    </div>
+
+                    <div class="ramp-setting">
+                        <label class="ramp-label-text">Target WPM</label>
+                        <input type="number" id="ramp-target-wpm" class="ramp-input" min="100" max="900" step="25" value="400">
+                    </div>
+
+                    <div class="ramp-setting">
+                        <label class="ramp-label-text">Duration</label>
+                        <div class="ramp-duration-btns">
+                            <button class="ramp-duration-btn" data-duration="1">1 min</button>
+                            <button class="ramp-duration-btn active" data-duration="5">5 min</button>
+                            <button class="ramp-duration-btn" data-duration="10">10 min</button>
+                        </div>
+                    </div>
+
+                    <div class="ramp-modal-actions">
+                        <button id="ramp-cancel-btn" class="ramp-modal-btn">Cancel</button>
+                        <button id="ramp-save-btn" class="ramp-modal-btn primary">Save</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Reader View -->
@@ -104,6 +160,8 @@
 
             <!-- RSVP Display -->
             <div id="rsvp-display" class="rsvp-display">
+                <!-- Chapter title overlay (shown on chapter change) -->
+                <div id="chapter-overlay" class="chapter-overlay"></div>
                 <div class="focus-guides" id="focus-guides">
                     <!-- Two continuous horizontal lines -->
                     <div class="guide-horizontal" id="guide-top"></div>
@@ -155,6 +213,19 @@
                 </div>
 
                 <div class="playback-row">
+                    <!-- Ramp state indicator (toggles ramp on/off) -->
+                    <button id="ramp-state-indicator" class="ramp-state-indicator" aria-label="Toggle ramp mode">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 17 10 11 14 15 20 9"/>
+                            <polyline points="14 9 20 9 20 15"/>
+                        </svg>
+                    </button>
+                    <!-- Prev chapter (outer left, hidden for non-EPUB) -->
+                    <button id="prev-chapter-btn" class="control-button chapter-button" aria-label="Previous chapter" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/>
+                        </svg>
+                    </button>
                     <button id="rewind-btn" class="control-button" aria-label="Rewind 10 words">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12.5 3C17.15 3 21.08 6.03 22.47 10.22L20.1 11C19.05 7.81 16.04 5.5 12.5 5.5C10.54 5.5 8.77 6.22 7.38 7.38L10 10H3V3L5.6 5.6C7.45 4 9.85 3 12.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.11 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
@@ -183,6 +254,12 @@
                             <circle cx="12" cy="12" r="10"/>
                             <line x1="12" y1="8" x2="12" y2="12"/>
                             <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <!-- Next chapter (outer right, hidden for non-EPUB) -->
+                    <button id="next-chapter-btn" class="control-button chapter-button" aria-label="Next chapter" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/>
                         </svg>
                     </button>
                 </div>
@@ -265,6 +342,32 @@
                         <input type="checkbox" id="flow-mode-setting">
                         Flow Mode (minimal UI)
                     </label>
+                </div>
+
+                <!-- Ramp Mode Settings (in-app access) -->
+                <div class="setting-group ramp-settings-group">
+                    <label class="setting-label">Ramp Mode (Training)</label>
+                    <div class="ramp-inline-settings">
+                        <label class="setting-label ramp-toggle-label">
+                            <input type="checkbox" id="settings-ramp-enabled">
+                            <span>Enable Ramp</span>
+                        </label>
+                        <div class="ramp-inline-row">
+                            <span class="ramp-inline-label">Start</span>
+                            <input type="number" id="settings-ramp-start" class="ramp-inline-input" min="100" max="900" step="25" value="200">
+                            <span class="ramp-inline-label">→ Target</span>
+                            <input type="number" id="settings-ramp-target" class="ramp-inline-input" min="100" max="900" step="25" value="400">
+                        </div>
+                        <div class="ramp-inline-row">
+                            <span class="ramp-inline-label">Duration</span>
+                            <div class="ramp-duration-btns compact">
+                                <button class="ramp-duration-btn settings-ramp-dur" data-duration="1">1m</button>
+                                <button class="ramp-duration-btn settings-ramp-dur active" data-duration="5">5m</button>
+                                <button class="ramp-duration-btn settings-ramp-dur" data-duration="10">10m</button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="setting-hint">Gradually increases WPM from Start to Target over the duration when reading begins.</p>
                 </div>
 
                 <div class="setting-group danger-zone">
@@ -645,7 +748,7 @@
     // ============================================================
 
     // Patterns for detecting front matter / nav content
-    const NAV_FILENAME_PATTERNS = /^(toc|nav|contents|index|copyright|titlepage|cover|halftitle|frontmatter|dedication|acknowledgments?|preface|foreword|introduction|about)/i;
+    const NAV_FILENAME_PATTERNS = /^(toc|nav|contents|copyright|titlepage|cover|halftitle|frontmatter|dedication|acknowledgments?|preface|foreword|introduction|about)/i;
     const CHAPTER_PATTERNS = /^(chapter|part|book|prologue|epilogue|section|\d+[.:]\s)/i;
 
     // Check if content is likely navigation (high link density)
@@ -709,6 +812,200 @@
         }
         // Fallback: skip first 10% as front matter
         return Math.min(Math.floor(sections.length * 0.1), sections.length - 1);
+    }
+
+    // ============================================================
+    // CHAPTER TITLE EXTRACTION
+    // ============================================================
+
+    // Junk titles to reject (case-insensitive)
+    const JUNK_TITLES = /^(contents|table of contents|toc|cover|title page|titlepage|copyright|copyright page|dedication|acknowledgements?|about the author|publisher|isbn|colophon|also by|other books|frontmatter|backmatter|half title|halftitle|epigraph|untitled|chapter|section|part)$/i;
+
+    // Sanity filter for chapter titles
+    function isValidChapterTitle(title) {
+        if (!title) return false;
+        // Trim and collapse whitespace
+        const cleaned = title.trim().replace(/\s+/g, ' ');
+        if (cleaned.length < 3) return false;
+        if (JUNK_TITLES.test(cleaned)) return false;
+        // Reject if mostly non-letters (>50% non-letter chars)
+        const letters = cleaned.replace(/[^a-zA-Z]/g, '').length;
+        if (letters < cleaned.length * 0.5) return false;
+        return true;
+    }
+
+    // Clean and normalize a chapter title
+    function cleanChapterTitle(title) {
+        if (!title) return null;
+        let cleaned = title.trim().replace(/\s+/g, ' ');
+        // Truncate very long titles
+        if (cleaned.length > 60) {
+            cleaned = cleaned.substring(0, 57) + '...';
+        }
+        return isValidChapterTitle(cleaned) ? cleaned : null;
+    }
+
+    // Normalize href for matching: strip fragment, decode, lowercase
+    function normalizeHref(href, basePath = '') {
+        if (!href) return '';
+        let normalized = decodeURIComponent(href).split('#')[0];
+        // Resolve relative paths
+        if (basePath && !normalized.startsWith('/')) {
+            if (normalized.startsWith('../')) {
+                const baseParts = basePath.split('/').filter(p => p);
+                const hrefParts = normalized.split('/');
+                while (hrefParts[0] === '..') {
+                    baseParts.pop();
+                    hrefParts.shift();
+                }
+                normalized = [...baseParts, ...hrefParts].join('/');
+            } else {
+                normalized = basePath + normalized;
+            }
+        }
+        return normalized.toLowerCase();
+    }
+
+    // Get basename of a path for fallback matching
+    function getBasename(path) {
+        return path.split('/').pop().toLowerCase();
+    }
+
+    // Build title map from EPUB3 nav document (nav.xhtml)
+    async function buildNavTitleMap(zip, manifest, opfDir, parser) {
+        const titleMap = new Map();
+        // Find nav document in manifest
+        let navHref = null;
+        for (const [id, item] of manifest) {
+            if (item.isNav && item.href) {
+                navHref = item.href;
+                break;
+            }
+        }
+        if (!navHref) return titleMap;
+
+        const navPath = opfDir + navHref;
+        const navFile = zip.file(navPath);
+        if (!navFile) return titleMap;
+
+        try {
+            const navContent = await navFile.async('string');
+            const navDoc = parser.parseFromString(navContent, 'text/html');
+            // Find toc nav element
+            const tocNav = navDoc.querySelector('nav[epub\\:type="toc"], nav[*|type="toc"], nav');
+            if (!tocNav) return titleMap;
+
+            // Extract all links
+            const links = tocNav.querySelectorAll('a[href]');
+            const navDir = navPath.substring(0, navPath.lastIndexOf('/') + 1);
+            links.forEach(link => {
+                const href = link.getAttribute('href');
+                const label = link.textContent?.trim();
+                if (href && label) {
+                    const normalized = normalizeHref(href, navDir);
+                    const cleaned = cleanChapterTitle(label);
+                    if (cleaned && !titleMap.has(normalized)) {
+                        titleMap.set(normalized, cleaned);
+                    }
+                }
+            });
+            console.log(`[EPUB] Nav title map: ${titleMap.size} entries`);
+        } catch (e) {
+            console.warn('[EPUB] Failed to parse nav document:', e);
+        }
+        return titleMap;
+    }
+
+    // Build title map from EPUB2 NCX (toc.ncx)
+    async function buildNcxTitleMap(zip, opfDoc, opfDir, parser) {
+        const titleMap = new Map();
+        // Find NCX file reference in spine or manifest
+        const spine = opfDoc.querySelector('spine, *|spine');
+        const ncxId = spine?.getAttribute('toc');
+        if (!ncxId) return titleMap;
+
+        const ncxItem = opfDoc.querySelector(`manifest item[id="${ncxId}"], *|manifest *|item[id="${ncxId}"]`);
+        const ncxHref = ncxItem?.getAttribute('href');
+        if (!ncxHref) return titleMap;
+
+        const ncxPath = opfDir + ncxHref;
+        const ncxFile = zip.file(ncxPath);
+        if (!ncxFile) return titleMap;
+
+        try {
+            const ncxContent = await ncxFile.async('string');
+            const ncxDoc = parser.parseFromString(ncxContent, 'text/xml');
+            const ncxDir = ncxPath.substring(0, ncxPath.lastIndexOf('/') + 1);
+            // Extract navPoints
+            const navPoints = ncxDoc.querySelectorAll('navPoint, *|navPoint');
+            navPoints.forEach(np => {
+                const content = np.querySelector('content, *|content');
+                const navLabel = np.querySelector('navLabel text, *|navLabel *|text');
+                const src = content?.getAttribute('src');
+                const label = navLabel?.textContent?.trim();
+                if (src && label) {
+                    const normalized = normalizeHref(src, ncxDir);
+                    const cleaned = cleanChapterTitle(label);
+                    if (cleaned && !titleMap.has(normalized)) {
+                        titleMap.set(normalized, cleaned);
+                    }
+                }
+            });
+            console.log(`[EPUB] NCX title map: ${titleMap.size} entries`);
+        } catch (e) {
+            console.warn('[EPUB] Failed to parse NCX:', e);
+        }
+        return titleMap;
+    }
+
+    // Extract first meaningful heading from XHTML content
+    function extractFirstHeading(doc) {
+        // Try h1, h2, h3 in order
+        for (const tag of ['h1', 'h2', 'h3']) {
+            const heading = doc.querySelector(tag);
+            if (heading) {
+                const text = heading.textContent?.trim();
+                const cleaned = cleanChapterTitle(text);
+                if (cleaned) return cleaned;
+            }
+        }
+        return null;
+    }
+
+    // Lookup title for a spine href using title maps with fallbacks
+    function lookupChapterTitle(href, resolvedPath, navMap, ncxMap, headingTitle, index) {
+        const normalizedResolved = resolvedPath.toLowerCase();
+        const basename = getBasename(resolvedPath);
+
+        // Priority 1: Nav map (exact match)
+        if (navMap.has(normalizedResolved)) {
+            return navMap.get(normalizedResolved);
+        }
+        // Priority 1b: Nav map (basename match)
+        for (const [key, value] of navMap) {
+            if (getBasename(key) === basename) {
+                return value;
+            }
+        }
+
+        // Priority 2: NCX map (exact match)
+        if (ncxMap.has(normalizedResolved)) {
+            return ncxMap.get(normalizedResolved);
+        }
+        // Priority 2b: NCX map (basename match)
+        for (const [key, value] of ncxMap) {
+            if (getBasename(key) === basename) {
+                return value;
+            }
+        }
+
+        // Priority 3: First heading from document
+        if (headingTitle) {
+            return headingTitle;
+        }
+
+        // Priority 4: Fallback
+        return `Chapter ${index + 1}`;
     }
 
     async function parseEpub(file) {
@@ -832,6 +1129,10 @@
             return { file: null, path: targetPath, fallback: false };
         }
 
+        // Build chapter title maps from nav.xhtml (EPUB3) and toc.ncx (EPUB2)
+        const navTitleMap = await buildNavTitleMap(zip, manifest, opfDir, parser);
+        const ncxTitleMap = await buildNcxTitleMap(zip, opfDoc, opfDir, parser);
+
         // Extract text with section tracking
         const sections = [];
         for (let i = 0; i < spineItems.length; i++) {
@@ -857,6 +1158,9 @@
             }
 
             const doc = parser.parseFromString(content, 'text/html');
+
+            // Extract heading BEFORE removing elements (headings might be in removed sections)
+            const headingTitle = extractFirstHeading(doc);
 
             // Remove non-content elements first (before checking)
             ['script', 'style', 'nav', 'aside'].forEach(tag =>
@@ -884,8 +1188,10 @@
 
             // Accept any non-empty content
             if (trimmed.length > 0) {
-                sections.push({ id, href, text: trimmed });
-                console.log(`[EPUB] spine[${i}] href="${href}" resolved="${actualPath}" found=true textLen=${textLen} skipped=false`);
+                // Look up chapter title using priority cascade
+                const chapterTitle = lookupChapterTitle(href, resolvedPath, navTitleMap, ncxTitleMap, headingTitle, sections.length);
+                sections.push({ id, href, text: trimmed, title: chapterTitle, resolvedPath });
+                console.log(`[EPUB] spine[${i}] href="${href}" resolved="${actualPath}" found=true textLen=${textLen} skipped=false title="${chapterTitle}"`);
             } else {
                 skipReason = 'empty after trim';
                 console.log(`[EPUB] spine[${i}] href="${href}" resolved="${actualPath}" found=true textLen=0 skipped=true reason="${skipReason}"`);
@@ -903,14 +1209,56 @@
             frontMatterWords += sections[i].text.split(/\s+/).filter(w => w).length;
         }
 
+        // Build chapters array with word boundaries
+        const chapters = [];
+        let wordIndex = 0;
+        for (let i = 0; i < sections.length; i++) {
+            const sectionWords = sections[i].text.split(/\s+/).filter(w => w).length;
+            chapters.push({
+                index: i,
+                title: sections[i].title,
+                startWord: wordIndex,
+                endWord: wordIndex + sectionWords - 1
+            });
+            wordIndex += sectionWords;
+        }
+        console.log(`[EPUB] chapters: ${chapters.length}`, chapters.map(c => `${c.startWord}-${c.endWord}: ${c.title}`));
+
         return {
             metadata,
             text: textParts.join('\n\n'),
             wordCount: textParts.join(' ').split(/\s+/).filter(w => w).length,
             firstProseWordIndex: frontMatterWords, // Word index to skip to
-            sectionCount: sections.length
+            sectionCount: sections.length,
+            chapters: chapters // Array of { index, title, startWord, endWord }
         };
     }
+
+    // ============================================================
+    // HAPTIC FEEDBACK
+    // ============================================================
+    // Minimal haptics for touch confirmation on supported devices
+    // Uses navigator.vibrate (Android) - iOS Safari doesn't support vibrate API
+    // but we keep the interface for future WebKit support
+
+    const Haptics = {
+        supported: typeof navigator !== 'undefined' && 'vibrate' in navigator,
+
+        // Light tap - button presses, navigation
+        tap() {
+            if (this.supported) navigator.vibrate(10);
+        },
+
+        // Double pulse - mode changes, state toggles
+        mode() {
+            if (this.supported) navigator.vibrate([8, 40, 8]);
+        },
+
+        // Heavier pulse - warnings, destructive actions
+        warn() {
+            if (this.supported) navigator.vibrate(25);
+        }
+    };
 
     // ============================================================
     // PLAYBACK CONTROLLER
@@ -1096,9 +1444,169 @@
     };
 
     // ============================================================
+    // RAMP CONTROLLER (Training Mode)
+    // ============================================================
+    // Thin wrapper that periodically updates WPM from start to target over duration
+    // Does NOT touch the timing engine - just calls playback.setWPM() periodically
+
+    class RampController {
+        constructor(playback, callbacks = {}) {
+            this.playback = playback;
+            this.onUpdate = callbacks.onUpdate || (() => {});
+            this.onComplete = callbacks.onComplete || (() => {});
+            this.onCancel = callbacks.onCancel || (() => {});
+
+            // Ramp configuration (persisted separately)
+            this.enabled = false;
+            this.startWpm = 200;
+            this.targetWpm = 400;
+            this.durationMinutes = 5;
+
+            // Runtime state
+            this.isRamping = false;
+            this.elapsedMs = 0;
+            this.lastTickTime = null;
+            this.intervalId = null;
+
+            // Update interval: small enough to respect clamp, ~500ms for smooth UX
+            this.updateIntervalMs = 500;
+        }
+
+        // Configure ramp settings
+        configure({ enabled, startWpm, targetWpm, durationMinutes }) {
+            if (enabled !== undefined) this.enabled = enabled;
+            if (startWpm !== undefined) this.startWpm = Math.max(100, Math.min(900, startWpm));
+            if (targetWpm !== undefined) this.targetWpm = Math.max(100, Math.min(900, targetWpm));
+            if (durationMinutes !== undefined) this.durationMinutes = Math.max(1, Math.min(60, durationMinutes));
+            console.log(`[Ramp] Configured: enabled=${this.enabled}, ${this.startWpm}→${this.targetWpm} over ${this.durationMinutes}m`);
+        }
+
+        // Get current config
+        getConfig() {
+            return {
+                enabled: this.enabled,
+                startWpm: this.startWpm,
+                targetWpm: this.targetWpm,
+                durationMinutes: this.durationMinutes
+            };
+        }
+
+        // Start ramping (called when playback starts)
+        start() {
+            if (!this.enabled) return;
+            if (this.isRamping) return;
+
+            this.isRamping = true;
+            this.elapsedMs = 0;
+            this.lastTickTime = performance.now();
+
+            // Set initial WPM
+            this.playback.setWPM(this.startWpm);
+            console.log(`[Ramp] Started: ${this.startWpm}→${this.targetWpm} over ${this.durationMinutes}m`);
+
+            // Start update interval
+            this.intervalId = setInterval(() => this.tick(), this.updateIntervalMs);
+            this.onUpdate(this.getProgress());
+        }
+
+        // Pause ramping (called when playback pauses)
+        pause() {
+            if (!this.isRamping) return;
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+            // Keep elapsedMs to resume from same point
+            this.lastTickTime = null;
+            console.log(`[Ramp] Paused at ${this.elapsedMs}ms`);
+        }
+
+        // Resume ramping (called when playback resumes)
+        resume() {
+            if (!this.enabled || !this.isRamping) return;
+            if (this.intervalId) return; // Already running
+
+            this.lastTickTime = performance.now();
+            this.intervalId = setInterval(() => this.tick(), this.updateIntervalMs);
+            console.log(`[Ramp] Resumed from ${this.elapsedMs}ms`);
+        }
+
+        // Stop and reset ramping
+        stop() {
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+            this.isRamping = false;
+            this.elapsedMs = 0;
+            this.lastTickTime = null;
+            console.log('[Ramp] Stopped');
+        }
+
+        // Cancel ramp (user manually changed WPM)
+        cancel() {
+            if (!this.isRamping) return;
+            this.stop();
+            this.onCancel();
+            console.log('[Ramp] Cancelled by user');
+        }
+
+        // Periodic tick to update WPM
+        tick() {
+            if (!this.isRamping) return;
+
+            const now = performance.now();
+            if (this.lastTickTime) {
+                this.elapsedMs += now - this.lastTickTime;
+            }
+            this.lastTickTime = now;
+
+            const totalMs = this.durationMinutes * 60 * 1000;
+
+            // Check if ramp complete
+            if (this.elapsedMs >= totalMs) {
+                this.playback.setWPM(this.targetWpm);
+                this.stop();
+                this.onComplete();
+                console.log(`[Ramp] Complete at ${this.targetWpm} WPM`);
+                return;
+            }
+
+            // Calculate current WPM (linear interpolation)
+            const progress = this.elapsedMs / totalMs;
+            const currentWpm = Math.round(this.startWpm + (this.targetWpm - this.startWpm) * progress);
+
+            // Only update if WPM changed
+            if (currentWpm !== this.playback.wpm) {
+                this.playback.setWPM(currentWpm);
+            }
+
+            this.onUpdate(this.getProgress());
+        }
+
+        // Get current ramp progress
+        getProgress() {
+            const totalMs = this.durationMinutes * 60 * 1000;
+            const progress = Math.min(1, this.elapsedMs / totalMs);
+            const currentWpm = Math.round(this.startWpm + (this.targetWpm - this.startWpm) * progress);
+            const remainingMs = Math.max(0, totalMs - this.elapsedMs);
+            const remainingSeconds = Math.ceil(remainingMs / 1000);
+
+            return {
+                isRamping: this.isRamping,
+                progress,
+                currentWpm,
+                remainingSeconds,
+                startWpm: this.startWpm,
+                targetWpm: this.targetWpm
+            };
+        }
+    }
+
+    // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260115h';
+    const BUILD_ID = '20260116r';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1184,6 +1692,12 @@
             this.quickFontLabel = document.getElementById('quick-font-label');
             this.quickWpmSlider = document.getElementById('quick-wpm-slider');
             this.quickWpmLabel = document.getElementById('quick-wpm-label');
+            // Chapter overlay and navigation
+            this.chapterOverlay = document.getElementById('chapter-overlay');
+            this.chapterFadeTimer = null;
+            this.currentChapterIndex = -1;
+            this.prevChapterBtn = document.getElementById('prev-chapter-btn');
+            this.nextChapterBtn = document.getElementById('next-chapter-btn');
             // Fullscreen button elements
             this.fullscreenBtn = document.getElementById('fullscreen-btn');
             this.iconExpand = document.getElementById('icon-expand');
@@ -1200,6 +1714,24 @@
             this.urlInput = document.getElementById('url-input');
             this.urlCancelBtn = document.getElementById('url-cancel-btn');
             this.urlLoadBtn = document.getElementById('url-load-btn');
+            // Ramp mode elements
+            this.rampBtn = document.getElementById('ramp-btn');
+            this.rampIndicator = document.getElementById('ramp-indicator');
+            this.rampIndicatorText = document.getElementById('ramp-indicator-text');
+            this.rampModal = document.getElementById('ramp-modal');
+            this.rampEnabled = document.getElementById('ramp-enabled');
+            this.rampStartWpm = document.getElementById('ramp-start-wpm');
+            this.rampTargetWpm = document.getElementById('ramp-target-wpm');
+            this.rampDurationBtns = document.querySelectorAll('.ramp-duration-btn:not(.settings-ramp-dur)');
+            this.rampCancelBtn = document.getElementById('ramp-cancel-btn');
+            this.rampSaveBtn = document.getElementById('ramp-save-btn');
+            // Ramp settings in settings panel
+            this.settingsRampEnabled = document.getElementById('settings-ramp-enabled');
+            this.settingsRampStart = document.getElementById('settings-ramp-start');
+            this.settingsRampTarget = document.getElementById('settings-ramp-target');
+            this.settingsRampDurBtns = document.querySelectorAll('.settings-ramp-dur');
+            // Ramp state indicator in reader control bar
+            this.rampStateIndicator = document.getElementById('ramp-state-indicator');
         }
 
         initPlayback() {
@@ -1209,6 +1741,13 @@
                 onStateChange: (state) => this.updatePlaybackUI(state),
                 onProgress: (percent) => this.updateProgress(percent),
                 onInterrupted: () => this.showResumePrompt()
+            });
+
+            // Initialize Ramp Controller
+            this.ramp = new RampController(this.playback, {
+                onUpdate: (progress) => this.updateRampProgress(progress),
+                onComplete: () => this.onRampComplete(),
+                onCancel: () => this.onRampCancel()
             });
         }
 
@@ -1224,6 +1763,10 @@
                 prompt.addEventListener('click', () => {
                     prompt.classList.remove('visible');
                     this.playback.play();
+                    // Resume ramp if it was active
+                    if (this.ramp.isRamping) {
+                        this.ramp.resume();
+                    }
                 });
             }
             prompt.classList.add('visible');
@@ -1269,12 +1812,12 @@
             window.addEventListener('drop', (e) => e.preventDefault());
 
             // Navigation
-            this.backBtn.addEventListener('click', () => this.showLibrary());
+            this.backBtn.addEventListener('click', () => { Haptics.tap(); this.showLibrary(); });
 
             // Settings
-            this.settingsBtn.addEventListener('click', () => this.openSettings());
-            this.readerSettingsBtn.addEventListener('click', () => this.openSettings());
-            this.closeSettingsBtn.addEventListener('click', () => this.closeSettings());
+            this.settingsBtn.addEventListener('click', () => { Haptics.tap(); this.openSettings(); });
+            this.readerSettingsBtn.addEventListener('click', () => { Haptics.tap(); this.openSettings(); });
+            this.closeSettingsBtn.addEventListener('click', () => { Haptics.tap(); this.closeSettings(); });
             this.settingsPanel.addEventListener('click', (e) => { if (e.target === this.settingsPanel) this.closeSettings(); });
 
             // Settings controls
@@ -1283,15 +1826,45 @@
             this.defaultWpmSetting.addEventListener('change', (e) => this.setDefaultWPM(e.target.value));
             this.showGuidesSetting.addEventListener('change', (e) => this.setShowGuides(e.target.checked));
             this.flowModeSetting.addEventListener('change', (e) => this.setFlowMode(e.target.checked));
-            this.clearLibraryBtn.addEventListener('click', () => this.clearLibrary());
-            this.modeToggleBtns.forEach(btn => btn.addEventListener('click', () => this.setMode(btn.dataset.mode)));
+            this.clearLibraryBtn.addEventListener('click', () => { Haptics.warn(); this.clearLibrary(); });
+            this.modeToggleBtns.forEach(btn => btn.addEventListener('click', () => { Haptics.mode(); this.setMode(btn.dataset.mode); }));
+
+            // Ramp mode controls - library screen modal
+            this.rampBtn.addEventListener('click', () => { Haptics.tap(); this.openRampModal(); });
+            this.rampCancelBtn.addEventListener('click', () => { Haptics.tap(); this.closeRampModal(); });
+            this.rampSaveBtn.addEventListener('click', () => { Haptics.tap(); this.saveRampFromModal(); });
+            this.rampModal.addEventListener('click', (e) => { if (e.target === this.rampModal) this.closeRampModal(); });
+            this.rampDurationBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.rampDurationBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+
+            // Ramp mode controls - settings panel
+            this.settingsRampEnabled.addEventListener('change', () => this.saveRampFromSettings());
+            this.settingsRampStart.addEventListener('change', () => this.saveRampFromSettings());
+            this.settingsRampTarget.addEventListener('change', () => this.saveRampFromSettings());
+            this.settingsRampDurBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.settingsRampDurBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this.saveRampFromSettings();
+                });
+            });
 
             // Playback controls
-            this.playBtn.addEventListener('click', () => this.playback.toggle());
-            this.prevBtn.addEventListener('click', () => this.playback.step(-1));
-            this.nextBtn.addEventListener('click', () => this.playback.step(1));
-            this.rewindBtn.addEventListener('click', () => this.playback.rewind(10));
+            this.playBtn.addEventListener('click', () => { Haptics.tap(); this.handlePlayPause(); });
+            this.prevBtn.addEventListener('click', () => { Haptics.tap(); this.playback.step(-1); });
+            this.nextBtn.addEventListener('click', () => { Haptics.tap(); this.playback.step(1); });
+            this.rewindBtn.addEventListener('click', () => { Haptics.tap(); this.playback.rewind(10); });
             this.progressSlider.addEventListener('input', (e) => this.playback.seekPercent(parseFloat(e.target.value)));
+            // Chapter navigation controls
+            this.prevChapterBtn.addEventListener('click', () => { Haptics.tap(); this.jumpToChapter(-1); });
+            this.nextChapterBtn.addEventListener('click', () => { Haptics.tap(); this.jumpToChapter(1); });
+
+            // Ramp state indicator toggle (tap to turn ramp on/off mid-read)
+            this.rampStateIndicator.addEventListener('click', () => this.toggleRampDuringPlayback());
 
             // Long press to show tuning overlay
             this.rsvpDisplay.addEventListener('mousedown', (e) => this.startLongPress(e));
@@ -1306,7 +1879,8 @@
                 if (!e.target.closest('.reader-controls') && !e.target.closest('.reader-header') && !e.target.closest('.tuning-overlay')) {
                     // Don't toggle if tuning overlay is visible
                     if (!this.tuningOverlay.classList.contains('visible')) {
-                        this.playback.toggle();
+                        Haptics.tap();
+                        this.handlePlayPause();
                     }
                 }
             });
@@ -1315,7 +1889,7 @@
             this.tuningWpmSlider.addEventListener('input', (e) => {
                 const rawWpm = parseInt(e.target.value);
                 const snappedWpm = this.snapWpm(rawWpm);
-                this.playback.setWPM(snappedWpm);
+                this.handleManualWpmChange(snappedWpm);
                 this.tuningWpmValue.textContent = `${snappedWpm} wpm`;
                 this.resetTuningTimeout();
             });
@@ -1331,10 +1905,10 @@
             });
 
             // Quick adjust overlay toggle
-            this.quickAdjustBtn.addEventListener('click', () => this.toggleQuickAdjust());
+            this.quickAdjustBtn.addEventListener('click', () => { Haptics.tap(); this.toggleQuickAdjust(); });
 
             // Fullscreen toggle
-            this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+            this.fullscreenBtn.addEventListener('click', () => { Haptics.tap(); this.toggleFullscreen(); });
 
             // Listen for fullscreen changes (user pressing Esc, etc.)
             document.addEventListener('fullscreenchange', () => this.updateFullscreenUI());
@@ -1359,7 +1933,7 @@
             this.quickWpmSlider.addEventListener('input', (e) => {
                 const raw = parseInt(e.target.value);
                 const snapped = Math.max(100, Math.min(900, Math.round(raw / 25) * 25));
-                this.playback.setWPM(snapped);
+                this.handleManualWpmChange(snapped);
                 this.quickWpmLabel.textContent = snapped;
                 // Sync tuning slider
                 this.tuningWpmSlider.value = snapped;
@@ -1454,11 +2028,11 @@
             if (!this.readerView.classList.contains('active')) return;
 
             switch (e.code) {
-                case 'Space': e.preventDefault(); this.playback.toggle(); break;
+                case 'Space': e.preventDefault(); this.handlePlayPause(); break;
                 case 'ArrowLeft': e.preventDefault(); this.playback.step(-1); break;
                 case 'ArrowRight': e.preventDefault(); this.playback.step(1); break;
-                case 'ArrowUp': e.preventDefault(); this.playback.adjustWPM(50); break;
-                case 'ArrowDown': e.preventDefault(); this.playback.adjustWPM(-50); break;
+                case 'ArrowUp': e.preventDefault(); this.handleManualWpmChange(this.playback.wpm + 50); break;
+                case 'ArrowDown': e.preventDefault(); this.handleManualWpmChange(this.playback.wpm - 50); break;
                 case 'Escape': e.preventDefault(); this.settingsPanel.classList.contains('open') ? this.closeSettings() : this.showLibrary(); break;
             }
         }
@@ -1470,7 +2044,7 @@
             try {
                 const docId = generateDocumentId(file);
                 const extension = file.name.split('.').pop().toLowerCase();
-                let content, metadata, firstProseWordIndex = 0;
+                let content, metadata, firstProseWordIndex = 0, chapters = null;
 
                 switch (extension) {
                     case 'epub':
@@ -1479,6 +2053,7 @@
                         content = epub.text;
                         metadata = epub.metadata;
                         firstProseWordIndex = epub.firstProseWordIndex || 0;
+                        chapters = epub.chapters || null;
                         break;
                     case 'txt':
                         content = await file.text();
@@ -1530,6 +2105,7 @@
                     fileSize: file.size,
                     wordCount: this.tokens.length,
                     firstProseWordIndex: firstProseWordIndex, // For "Skip to content" feature
+                    chapters: chapters, // Array of { index, title, startWord, endWord } or null
                     addedAt: Date.now(),
                     lastOpened: Date.now(),
                     progress: { currentIndex: 0, wpm: this.settings.defaultWPM, mode: this.settings.mode, updatedAt: Date.now() }
@@ -1960,6 +2536,125 @@
             const progress = this.playback.getProgress();
             this.progressCurrent.textContent = progress.current;
             this.progressTotal.textContent = progress.total;
+            // Check for chapter change
+            this.checkChapterChange(this.playback.currentIndex);
+        }
+
+        // Find which chapter contains the given word index
+        getChapterForWordIndex(wordIndex) {
+            const chapters = this.currentDocument?.chapters;
+            if (!chapters || chapters.length === 0) return null;
+            for (let i = 0; i < chapters.length; i++) {
+                if (wordIndex >= chapters[i].startWord && wordIndex <= chapters[i].endWord) {
+                    return { index: i, chapter: chapters[i] };
+                }
+            }
+            return null;
+        }
+
+        // Check if we've entered a new chapter and show overlay if so
+        checkChapterChange(wordIndex) {
+            const result = this.getChapterForWordIndex(wordIndex);
+            if (!result) {
+                // No chapters - update button visibility
+                this.updateChapterButtonState();
+                return;
+            }
+
+            const { index, chapter } = result;
+            if (index !== this.currentChapterIndex) {
+                this.currentChapterIndex = index;
+                this.showChapterOverlay(chapter.title);
+                this.updateChapterButtonState();
+            }
+        }
+
+        // Show chapter title overlay with fade animation
+        showChapterOverlay(title) {
+            if (!this.chapterOverlay || !title) return;
+
+            // Cancel any existing fade timer
+            if (this.chapterFadeTimer) {
+                clearTimeout(this.chapterFadeTimer);
+                this.chapterFadeTimer = null;
+            }
+
+            // Reset classes and set content
+            this.chapterOverlay.classList.remove('visible', 'fading');
+            this.chapterOverlay.textContent = title;
+
+            // Force reflow to restart animation
+            void this.chapterOverlay.offsetWidth;
+
+            // Show immediately
+            this.chapterOverlay.classList.add('visible');
+
+            // Start fade after 0.5s, fade takes 1.5s (total ~2s visible)
+            this.chapterFadeTimer = setTimeout(() => {
+                this.chapterOverlay.classList.remove('visible');
+                this.chapterOverlay.classList.add('fading');
+                // Clean up after fade completes
+                this.chapterFadeTimer = setTimeout(() => {
+                    this.chapterOverlay.classList.remove('fading');
+                    this.chapterFadeTimer = null;
+                }, 1500);
+            }, 500);
+        }
+
+        // Reset chapter tracking (called when opening a new document)
+        resetChapterTracking() {
+            this.currentChapterIndex = -1;
+            if (this.chapterFadeTimer) {
+                clearTimeout(this.chapterFadeTimer);
+                this.chapterFadeTimer = null;
+            }
+            if (this.chapterOverlay) {
+                this.chapterOverlay.classList.remove('visible', 'fading');
+                this.chapterOverlay.textContent = '';
+            }
+        }
+
+        // Jump to previous/next chapter
+        jumpToChapter(direction) {
+            const chapters = this.currentDocument?.chapters;
+            if (!chapters || chapters.length === 0) return;
+
+            const newIndex = this.currentChapterIndex + direction;
+            if (newIndex < 0 || newIndex >= chapters.length) return;
+
+            const chapter = chapters[newIndex];
+            const wasPlaying = this.playback.isPlaying;
+
+            // Seek to start of chapter
+            this.playback.seek(chapter.startWord);
+            this.currentChapterIndex = newIndex;
+
+            // Show chapter overlay
+            this.showChapterOverlay(chapter.title);
+
+            // Update button states
+            this.updateChapterButtonState();
+
+            // Resume playback if it was playing
+            if (wasPlaying) {
+                this.playback.play();
+            }
+        }
+
+        // Update chapter button visibility and enabled state
+        updateChapterButtonState() {
+            const chapters = this.currentDocument?.chapters;
+            const hasChapters = chapters && chapters.length > 1;
+
+            // Show/hide buttons based on whether document has chapters
+            this.prevChapterBtn.style.display = hasChapters ? '' : 'none';
+            this.nextChapterBtn.style.display = hasChapters ? '' : 'none';
+
+            if (hasChapters) {
+                // Enable/disable based on current position
+                this.prevChapterBtn.disabled = this.currentChapterIndex <= 0;
+                this.nextChapterBtn.disabled = this.currentChapterIndex >= chapters.length - 1;
+            }
         }
 
         async loadLibrary() {
@@ -1978,8 +2673,12 @@
             }
             this.recentList.innerHTML = docs.map(doc => {
                 const percent = doc.wordCount > 0 ? Math.round((doc.progress?.currentIndex || 0) / doc.wordCount * 100) : 0;
+                const hasChapters = doc.chapters && doc.chapters.length > 1;
+                // Get current chapter index from progress or default to chapter containing current word
+                const currentChapterIdx = this.getChapterIndexForDoc(doc);
+                const chapterTitle = hasChapters ? this.formatChapterLabel(doc.chapters[currentChapterIdx], currentChapterIdx) : '';
                 return `
-                    <div class="recent-item" data-doc-id="${doc.id}">
+                    <div class="recent-item" data-doc-id="${doc.id}" data-chapter-idx="${currentChapterIdx}">
                         <div class="recent-item-header">
                             <div class="recent-item-title">${doc.title}</div>
                             <button class="btn-delete" data-action="delete" aria-label="Delete document">
@@ -1993,6 +2692,21 @@
                             <span>${doc.author || doc.sourceType.toUpperCase()}</span>
                             <span>${doc.wordCount >= 1000 ? (doc.wordCount/1000).toFixed(1) + 'k' : doc.wordCount} words</span>
                         </div>
+                        ${hasChapters ? `
+                        <div class="chapter-selector">
+                            <button class="chapter-nav chapter-prev" data-action="chapter-prev" aria-label="Previous chapter" ${currentChapterIdx === 0 ? 'disabled' : ''}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="15 18 9 12 15 6"/>
+                                </svg>
+                            </button>
+                            <span class="chapter-label">${chapterTitle}</span>
+                            <button class="chapter-nav chapter-next" data-action="chapter-next" aria-label="Next chapter" ${currentChapterIdx >= doc.chapters.length - 1 ? 'disabled' : ''}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="9 6 15 12 9 18"/>
+                                </svg>
+                            </button>
+                        </div>
+                        ` : ''}
                         <div class="recent-item-progress">
                             <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%"></div></div>
                             <span>${percent}%</span>
@@ -2007,10 +2721,110 @@
 
             this.recentList.querySelectorAll('.recent-item').forEach(item => {
                 const docId = item.dataset.docId;
-                item.querySelector('.btn-resume').addEventListener('click', (e) => { e.stopPropagation(); this.openDocumentById(docId, true); });
+                const doc = docs.find(d => d.id === docId);
+                item.querySelector('.btn-resume').addEventListener('click', (e) => { e.stopPropagation(); this.openDocumentAtChapter(docId, parseInt(item.dataset.chapterIdx) || 0); });
                 item.querySelector('.btn-restart').addEventListener('click', (e) => { e.stopPropagation(); this.openDocumentById(docId, false); });
                 item.querySelector('.btn-delete').addEventListener('click', (e) => { e.stopPropagation(); this.deleteDocument(docId); });
+                // Chapter navigation
+                const prevBtn = item.querySelector('.chapter-prev');
+                const nextBtn = item.querySelector('.chapter-next');
+                if (prevBtn && doc?.chapters) {
+                    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); this.navigateChapter(item, doc, -1); });
+                }
+                if (nextBtn && doc?.chapters) {
+                    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); this.navigateChapter(item, doc, 1); });
+                }
             });
+        }
+
+        // Get chapter index for a document based on current progress
+        getChapterIndexForDoc(doc) {
+            if (!doc.chapters || doc.chapters.length === 0) return 0;
+            const wordIndex = doc.progress?.currentIndex || 0;
+            for (let i = 0; i < doc.chapters.length; i++) {
+                if (wordIndex >= doc.chapters[i].startWord && wordIndex <= doc.chapters[i].endWord) {
+                    return i;
+                }
+            }
+            return 0;
+        }
+
+        // Format chapter label for display
+        formatChapterLabel(chapter, index) {
+            if (!chapter) return '';
+            const title = chapter.title || `Chapter ${index + 1}`;
+            // If title already contains chapter/part number, just use it
+            if (/^(chapter|part|book|section)\s+/i.test(title)) {
+                return title;
+            }
+            return `${index + 1}. ${title}`;
+        }
+
+        // Navigate chapter selector
+        navigateChapter(item, doc, direction) {
+            const currentIdx = parseInt(item.dataset.chapterIdx) || 0;
+            const newIdx = Math.max(0, Math.min(doc.chapters.length - 1, currentIdx + direction));
+            if (newIdx === currentIdx) return;
+
+            item.dataset.chapterIdx = newIdx;
+            const label = item.querySelector('.chapter-label');
+            const prevBtn = item.querySelector('.chapter-prev');
+            const nextBtn = item.querySelector('.chapter-next');
+
+            if (label) label.textContent = this.formatChapterLabel(doc.chapters[newIdx], newIdx);
+            if (prevBtn) prevBtn.disabled = newIdx === 0;
+            if (nextBtn) nextBtn.disabled = newIdx >= doc.chapters.length - 1;
+        }
+
+        // Open document at specific chapter
+        async openDocumentAtChapter(docId, chapterIdx) {
+            this.showLoading('Loading...');
+            try {
+                const doc = await this.persistence.getDocument(docId);
+                if (!doc) throw new Error('Document not found');
+                const tokens = await this.persistence.getTokens(docId);
+                if (!tokens || tokens.length === 0) {
+                    throw new Error('Document data not found or empty. Please re-import.');
+                }
+
+                this.tokens = tokens;
+                this.currentDocument = doc;
+
+                // Determine start index from chapter
+                let startIndex = 0;
+                if (doc.chapters && doc.chapters[chapterIdx]) {
+                    startIndex = doc.chapters[chapterIdx].startWord;
+                } else if (doc.progress?.currentIndex) {
+                    startIndex = doc.progress.currentIndex;
+                }
+
+                // Update lastOpened
+                doc.lastOpened = Date.now();
+                await this.persistence.saveDocument(doc);
+
+                this.hideLoading();
+                this.openReaderAtIndex(doc, startIndex);
+            } catch (error) {
+                console.error('[openDocumentAtChapter] Error:', error);
+                this.hideLoading();
+                alert(error.message);
+            }
+        }
+
+        // Open reader at specific word index
+        openReaderAtIndex(doc, startIndex) {
+            this.currentDocument = doc;
+            this.docTitle.textContent = doc.title;
+            const wpm = this.settings.defaultWPM;
+            console.log(`[openReaderAtIndex] tokens: ${this.tokens.length}, startIndex: ${startIndex}, wpm: ${wpm}`);
+            this.playback.load(this.tokens, startIndex);
+            this.playback.setWPM(wpm);
+            this.ramp.stop(); // Reset ramp state for new document
+            this.progressTotal.textContent = this.tokens.length;
+            this.progressCurrent.textContent = startIndex + 1;
+            this.resetChapterTracking();
+            this.checkChapterChange(startIndex);
+            this.showReader();
         }
 
         async deleteDocument(docId) {
@@ -2078,9 +2892,13 @@
             console.log(`[openReader] tokens: ${this.tokens.length}, startIndex: ${startIndex}, wpm: ${wpm}`);
             this.playback.load(this.tokens, startIndex);
             this.playback.setWPM(wpm);
+            this.ramp.stop(); // Reset ramp state for new document
             console.log(`[openReader] using WPM: ${this.playback.wpm}, source: default`);
             this.progressTotal.textContent = this.tokens.length;
             this.progressCurrent.textContent = startIndex + 1;
+            // Reset chapter tracking and check initial chapter
+            this.resetChapterTracking();
+            this.checkChapterChange(startIndex);
             this.showReader();
         }
 
@@ -2093,6 +2911,7 @@
         showLibrary() {
             this.saveProgress();
             this.playback.pause();
+            this.ramp.stop(); // Stop ramp when leaving reader
             this.libraryView.classList.add('active');
             this.readerView.classList.remove('active');
             this.loadLibrary();
@@ -2113,6 +2932,8 @@
                 const saved = await this.persistence.getAllSettings();
                 this.settings = { ...this.settings, ...saved };
                 this.applySettings();
+                // Load ramp settings
+                this.loadRampSettings();
             } catch (error) { console.error('Error loading settings:', error); }
         }
 
@@ -2138,6 +2959,202 @@
             // Apply WPM to tuning slider
             this.tuningWpmSlider.value = this.settings.defaultWPM;
             this.tuningWpmValue.textContent = `${this.settings.defaultWPM} wpm`;
+        }
+
+        // ==================== RAMP MODE ====================
+
+        async loadRampSettings() {
+            const rampEnabled = await this.persistence.getSetting('rampEnabled', false);
+            const rampStartWpm = await this.persistence.getSetting('rampStartWpm', 200);
+            const rampTargetWpm = await this.persistence.getSetting('rampTargetWpm', 400);
+            const rampDuration = await this.persistence.getSetting('rampDuration', 5);
+
+            this.ramp.configure({
+                enabled: rampEnabled,
+                startWpm: rampStartWpm,
+                targetWpm: rampTargetWpm,
+                durationMinutes: rampDuration
+            });
+
+            this.applyRampSettings();
+        }
+
+        applyRampSettings() {
+            const config = this.ramp.getConfig();
+
+            // Update modal inputs
+            this.rampEnabled.checked = config.enabled;
+            this.rampStartWpm.value = config.startWpm;
+            this.rampTargetWpm.value = config.targetWpm;
+            this.rampDurationBtns.forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.duration) === config.durationMinutes);
+            });
+
+            // Update settings panel inputs
+            this.settingsRampEnabled.checked = config.enabled;
+            this.settingsRampStart.value = config.startWpm;
+            this.settingsRampTarget.value = config.targetWpm;
+            this.settingsRampDurBtns.forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.duration) === config.durationMinutes);
+            });
+
+            // Update UI indicators
+            this.updateRampIndicator();
+        }
+
+        async saveRampSettings() {
+            const config = this.ramp.getConfig();
+            await this.persistence.saveSetting('rampEnabled', config.enabled);
+            await this.persistence.saveSetting('rampStartWpm', config.startWpm);
+            await this.persistence.saveSetting('rampTargetWpm', config.targetWpm);
+            await this.persistence.saveSetting('rampDuration', config.durationMinutes);
+            this.updateRampIndicator();
+        }
+
+        updateRampIndicator() {
+            const config = this.ramp.getConfig();
+            if (config.enabled) {
+                this.rampIndicator.style.display = '';
+                this.rampIndicatorText.textContent = `Ramp: ${config.startWpm} → ${config.targetWpm} (${config.durationMinutes}m)`;
+                this.rampBtn.classList.add('ramp-active');
+            } else {
+                this.rampIndicator.style.display = 'none';
+                this.rampBtn.classList.remove('ramp-active');
+            }
+            // Update reader control bar state indicator
+            this.updateRampStateIndicator();
+        }
+
+        updateRampStateIndicator() {
+            if (!this.rampStateIndicator) return;
+            const config = this.ramp.getConfig();
+            const isRamping = this.ramp.isRamping;
+
+            this.rampStateIndicator.classList.remove('enabled', 'active');
+            if (isRamping) {
+                this.rampStateIndicator.classList.add('active');
+            } else if (config.enabled) {
+                this.rampStateIndicator.classList.add('enabled');
+            }
+            // When disabled: no class, shows neutral gray
+        }
+
+        openRampModal() {
+            // Sync modal with current settings
+            this.applyRampSettings();
+            this.rampModal.classList.remove('hidden');
+        }
+
+        closeRampModal() {
+            this.rampModal.classList.add('hidden');
+        }
+
+        saveRampFromModal() {
+            // Read modal values
+            const enabled = this.rampEnabled.checked;
+            const startWpm = parseInt(this.rampStartWpm.value) || 200;
+            const targetWpm = parseInt(this.rampTargetWpm.value) || 400;
+            const activeBtn = document.querySelector('.ramp-duration-btn:not(.settings-ramp-dur).active');
+            const duration = activeBtn ? parseInt(activeBtn.dataset.duration) : 5;
+
+            this.ramp.configure({ enabled, startWpm, targetWpm, durationMinutes: duration });
+            this.saveRampSettings();
+            this.closeRampModal();
+        }
+
+        saveRampFromSettings() {
+            // Read settings panel values
+            const enabled = this.settingsRampEnabled.checked;
+            const startWpm = parseInt(this.settingsRampStart.value) || 200;
+            const targetWpm = parseInt(this.settingsRampTarget.value) || 400;
+            const activeBtn = document.querySelector('.settings-ramp-dur.active');
+            const duration = activeBtn ? parseInt(activeBtn.dataset.duration) : 5;
+
+            this.ramp.configure({ enabled, startWpm, targetWpm, durationMinutes: duration });
+            this.saveRampSettings();
+        }
+
+        updateRampProgress(progress) {
+            // Could show a subtle progress indicator in the reader
+            // For now, just sync the WPM display
+            this.tuningWpmSlider.value = progress.currentWpm;
+            this.tuningWpmValue.textContent = `${progress.currentWpm} wpm`;
+            this.quickWpmLabel.textContent = progress.currentWpm;
+            this.quickWpmSlider.value = progress.currentWpm;
+        }
+
+        onRampComplete() {
+            console.log('[App] Ramp complete');
+            // Ramp is done, now running at target WPM
+            this.updateRampStateIndicator();
+        }
+
+        onRampCancel() {
+            console.log('[App] Ramp cancelled');
+            // User manually changed WPM, ramp is cancelled
+            this.updateRampStateIndicator();
+        }
+
+        // Handle play/pause with ramp integration
+        handlePlayPause() {
+            if (this.playback.isPlaying) {
+                // Pausing
+                this.playback.pause();
+                this.ramp.pause();
+            } else {
+                // Starting/resuming
+                if (this.ramp.enabled && !this.ramp.isRamping) {
+                    // Fresh start with ramp enabled - begin ramp
+                    this.ramp.start();
+                    this.updateRampStateIndicator();
+                } else if (this.ramp.isRamping) {
+                    // Resuming a paused ramp
+                    this.ramp.resume();
+                }
+                this.playback.play();
+            }
+        }
+
+        // Called when user manually changes WPM (via slider/tuning overlay)
+        handleManualWpmChange(wpm) {
+            // Cancel any active ramp
+            if (this.ramp.isRamping) {
+                this.ramp.cancel();
+            }
+            this.playback.setWPM(wpm);
+        }
+
+        // Toggle ramp on/off during playback via indicator button
+        toggleRampDuringPlayback() {
+            // Only toggle if ramp is enabled in settings
+            if (!this.ramp.enabled) {
+                return; // Gray state - no action, no haptic
+            }
+
+            Haptics.mode(); // State change haptic (double tick)
+
+            if (this.ramp.isRamping) {
+                // ON → OFF: freeze ramp at current WPM
+                this.ramp.pause();
+                this.ramp.isRamping = false;
+                console.log('[App] Ramp toggled OFF at', this.playback.wpm, 'WPM');
+            } else if (this.ramp.elapsedMs > 0) {
+                // OFF → ON: resume from where we paused
+                this.ramp.isRamping = true;
+                if (this.playback.isPlaying) {
+                    this.ramp.resume();
+                }
+                console.log('[App] Ramp toggled ON, resuming from', this.ramp.elapsedMs, 'ms');
+            } else {
+                // OFF → ON: start fresh (never ran before)
+                this.ramp.isRamping = true;
+                if (this.playback.isPlaying) {
+                    this.ramp.start();
+                }
+                console.log('[App] Ramp toggled ON, starting fresh');
+            }
+
+            this.updateRampStateIndicator();
         }
 
         async setFontSize(size) {
