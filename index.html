@@ -1606,7 +1606,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260116r';
+    const BUILD_ID = '20260116s';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1732,6 +1732,15 @@
             this.settingsRampDurBtns = document.querySelectorAll('.settings-ramp-dur');
             // Ramp state indicator in reader control bar
             this.rampStateIndicator = document.getElementById('ramp-state-indicator');
+
+            // Hide fullscreen button on iOS (Safari/PWA) - fullscreen API doesn't work reliably
+            // iOS PWA is already fullscreen-like by default
+            this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const fullscreenSupported = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+            if (this.isIOS || !fullscreenSupported) {
+                this.fullscreenBtn.parentElement.style.display = 'none';
+            }
         }
 
         initPlayback() {

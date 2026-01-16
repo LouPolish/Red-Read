@@ -1326,13 +1326,58 @@ body {
     }
 
     .control-button {
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .control-button svg {
+        width: 20px;
+        height: 20px;
     }
 
     .play-button {
-        width: 56px;
-        height: 56px;
+        width: 52px;
+        height: 52px;
+    }
+
+    .play-button svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    .playback-row {
+        gap: 4px;
+    }
+
+    /* Tighter chapter button spacing */
+    #prev-chapter-btn {
+        margin-right: 8px;
+    }
+
+    #next-chapter-btn {
+        margin-left: 8px;
+    }
+
+    .control-button.chapter-button {
+        width: 30px;
+        height: 30px;
+    }
+
+    .control-button.chapter-button svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Ramp indicator smaller on tiny screens */
+    .ramp-state-indicator {
+        width: 30px;
+        height: 30px;
+        left: 8px;
+    }
+
+    .ramp-state-indicator svg {
+        width: 14px;
+        height: 14px;
     }
 
     .wpm-button {
@@ -1341,10 +1386,33 @@ body {
     }
 }
 
-/* Standard phones */
+/* Standard phones (iPhone portrait) */
 @media (min-width: 376px) and (max-width: 428px) {
     :root {
         --word-font-size: 42px;
+    }
+
+    .control-button {
+        width: 44px;
+        height: 44px;
+    }
+
+    .play-button {
+        width: 58px;
+        height: 58px;
+    }
+
+    .playback-row {
+        gap: 6px;
+    }
+
+    /* Tighter chapter button spacing */
+    #prev-chapter-btn {
+        margin-right: 12px;
+    }
+
+    #next-chapter-btn {
+        margin-left: 12px;
     }
 }
 
@@ -1838,33 +1906,44 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 34px;
+    height: 34px;
     background: transparent;
-    border: none;
+    border: 1px solid var(--text-muted);
     border-radius: 50%;
     padding: 0;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    color: var(--text-muted);
 }
 
 .ramp-state-indicator svg {
-    width: 16px;
-    height: 16px;
-    stroke: var(--text-muted);
-    opacity: 0.4;
-}
-
-/* Ramp enabled (but not actively ramping) */
-.ramp-state-indicator.enabled svg {
-    stroke: var(--accent);
-    opacity: 0.5;
-}
-
-/* Ramp actively running */
-.ramp-state-indicator.active svg {
-    stroke: var(--accent);
+    width: 17px;
+    height: 17px;
+    stroke: currentColor;
     opacity: 0.6;
+}
+
+/* Ramp enabled (but not actively ramping) - red outline, ready state */
+.ramp-state-indicator.enabled {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ramp-state-indicator.enabled svg {
+    opacity: 0.7;
+}
+
+/* Ramp actively running - solid red background */
+.ramp-state-indicator.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.ramp-state-indicator.active svg {
+    stroke: white;
+    opacity: 1;
 }
 
 .ramp-state-indicator:active {
