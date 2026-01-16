@@ -588,18 +588,18 @@ body {
 /* Chapter title overlay - positioned above guide lines */
 .chapter-overlay {
     position: absolute;
-    top: 18%;
+    top: 12%;
     left: 50%;
     transform: translateX(-50%);
     font-family: var(--font-ui);
-    font-size: clamp(30px, 4.5vw, 42px); /* 30px min (phone), scales up to 42px (TV) */
+    font-size: clamp(18px, 3vw, 32px); /* Smaller: 18px min (phone), scales up to 32px */
     color: var(--text-secondary);
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 85%;
-    padding: 8px 16px;
+    padding: 6px 12px;
     opacity: 0;
     pointer-events: none;
     z-index: 10;
@@ -907,6 +907,7 @@ body {
 }
 
 .playback-row {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
