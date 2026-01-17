@@ -214,7 +214,7 @@
 
                 <div class="playback-row">
                     <!-- Prev chapter (outer left, hidden for non-EPUB) -->
-                    <button id="prev-chapter-btn" class="control-button chapter-button" aria-label="Previous chapter" style="display: none;">
+                    <button id="prev-chapter-btn" class="control-button chapter-button chapter-hidden" aria-label="Previous chapter">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/>
                         </svg>
@@ -252,7 +252,7 @@
                         </svg>
                     </button>
                     <!-- Next chapter (outer right, hidden for non-EPUB) -->
-                    <button id="next-chapter-btn" class="control-button chapter-button" aria-label="Next chapter" style="display: none;">
+                    <button id="next-chapter-btn" class="control-button chapter-button chapter-hidden" aria-label="Next chapter">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/>
                         </svg>
@@ -1601,7 +1601,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260116y';
+    const BUILD_ID = '20260116z';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1735,6 +1735,42 @@
             if (this.isIOS || !fullscreenSupported) {
                 this.fullscreenBtn.parentElement.style.display = 'none';
             }
+
+            // Chapter button sanity check for older WebKit (iPadOS 16, etc.)
+            // If buttons have 0 dimensions or are offscreen when visible, apply fallback
+            this.checkChapterButtonLayout();
+        }
+
+        // Runtime sanity check for chapter buttons - older WebKit compatibility
+        checkChapterButtonLayout() {
+            // Temporarily show buttons to measure
+            const prevWasHidden = this.prevChapterBtn.classList.contains('chapter-hidden');
+            const nextWasHidden = this.nextChapterBtn.classList.contains('chapter-hidden');
+
+            this.prevChapterBtn.classList.remove('chapter-hidden');
+            this.nextChapterBtn.classList.remove('chapter-hidden');
+
+            // Force layout calculation
+            requestAnimationFrame(() => {
+                const prevRect = this.prevChapterBtn.getBoundingClientRect();
+                const nextRect = this.nextChapterBtn.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+
+                // Check for collapsed dimensions or offscreen positioning
+                const prevBroken = prevRect.width < 20 || prevRect.height < 20 ||
+                                   prevRect.right < 0 || prevRect.left > viewportWidth;
+                const nextBroken = nextRect.width < 20 || nextRect.height < 20 ||
+                                   nextRect.right < 0 || nextRect.left > viewportWidth;
+
+                if (prevBroken || nextBroken) {
+                    console.warn('Chapter button layout issue detected, applying fallback');
+                    document.body.classList.add('chapter-button-fallback');
+                }
+
+                // Restore hidden state
+                if (prevWasHidden) this.prevChapterBtn.classList.add('chapter-hidden');
+                if (nextWasHidden) this.nextChapterBtn.classList.add('chapter-hidden');
+            });
         }
 
         initPlayback() {
@@ -2649,13 +2685,16 @@
             const hasChapters = chapters && chapters.length > 1;
 
             // Show/hide buttons based on whether document has chapters
-            this.prevChapterBtn.style.display = hasChapters ? '' : 'none';
-            this.nextChapterBtn.style.display = hasChapters ? '' : 'none';
-
+            // Use class toggle instead of inline style for WebKit compatibility
             if (hasChapters) {
+                this.prevChapterBtn.classList.remove('chapter-hidden');
+                this.nextChapterBtn.classList.remove('chapter-hidden');
                 // Enable/disable based on current position
                 this.prevChapterBtn.disabled = this.currentChapterIndex <= 0;
                 this.nextChapterBtn.disabled = this.currentChapterIndex >= chapters.length - 1;
+            } else {
+                this.prevChapterBtn.classList.add('chapter-hidden');
+                this.nextChapterBtn.classList.add('chapter-hidden');
             }
         }
 

@@ -987,14 +987,30 @@ body {
 
 /* Chapter navigation buttons - smaller, well-separated from main controls */
 /* Use higher specificity to override .control-button base styles */
+/* WebKit 16 compatible: explicit dimensions, simple flex, no modern selectors */
 .control-button.chapter-button {
+    /* Explicit dimensions - cannot collapse to 0 */
     width: 34px;
+    min-width: 34px;
     height: 34px;
+    min-height: 34px;
+    /* Simple box model */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    /* Visual styling */
     background: transparent;
     border: 1px solid var(--text-muted);
     color: var(--text-secondary);
+    border-radius: 50%;
     /* Large touch target via pseudo-element */
     position: relative;
+}
+
+/* Hidden state for chapter buttons - use visibility to preserve layout space detection */
+.chapter-button.chapter-hidden {
+    display: none;
 }
 
 .chapter-button::before {
@@ -1010,6 +1026,7 @@ body {
 .control-button.chapter-button svg {
     width: 17px;
     height: 17px;
+    flex-shrink: 0;
 }
 
 .control-button.chapter-button:hover:not(:disabled),
@@ -1035,6 +1052,24 @@ body {
 #next-chapter-btn {
     margin-left: 24px;
     margin-right: 0;
+}
+
+/* Fallback layout for chapter buttons if main layout fails */
+/* Applied via JS sanity check on older WebKit */
+.chapter-button-fallback #prev-chapter-btn,
+.chapter-button-fallback #next-chapter-btn {
+    position: static;
+    display: flex;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    margin: 0 8px;
+}
+
+.chapter-button-fallback #prev-chapter-btn.chapter-hidden,
+.chapter-button-fallback #next-chapter-btn.chapter-hidden {
+    display: none;
 }
 
 .wpm-button {
@@ -1360,7 +1395,9 @@ body {
 
     .control-button.chapter-button {
         width: 30px;
+        min-width: 30px;
         height: 30px;
+        min-height: 30px;
     }
 
     .control-button.chapter-button svg {
