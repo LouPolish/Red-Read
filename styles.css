@@ -1008,9 +1008,19 @@ body {
     position: relative;
 }
 
-/* Hidden state for chapter buttons - use visibility to preserve layout space detection */
+/* Hidden state for chapter buttons - use visibility + width collapse for WebKit 16 compatibility */
+/* Avoid display:none which can cause layout issues when toggled in older WebKit */
 .chapter-button.chapter-hidden {
-    display: none;
+    visibility: hidden;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .chapter-button::before {
@@ -1069,7 +1079,12 @@ body {
 
 .chapter-button-fallback #prev-chapter-btn.chapter-hidden,
 .chapter-button-fallback #next-chapter-btn.chapter-hidden {
-    display: none;
+    visibility: hidden;
+    width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
 }
 
 .wpm-button {
@@ -1939,11 +1954,15 @@ body {
 .ramp-state-indicator::before {
     content: '';
     position: absolute;
-    inset: -1.5px;
+    /* Use explicit positioning instead of 'inset' for WebKit 16 compatibility */
+    top: -1.5px;
+    right: -1.5px;
+    bottom: -1.5px;
+    left: -1.5px;
     border-radius: 50%;
     background: var(--bg-primary);
     /* Mask out small sections at 3 o'clock and 9 o'clock (~25° each side) */
-    mask: conic-gradient(
+    -webkit-mask: conic-gradient(
         from 0deg,
         transparent 0deg,
         transparent 65deg,
@@ -1956,7 +1975,7 @@ body {
         transparent 295deg,
         transparent 360deg
     );
-    -webkit-mask: conic-gradient(
+    mask: conic-gradient(
         from 0deg,
         transparent 0deg,
         transparent 65deg,
