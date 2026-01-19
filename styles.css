@@ -1008,19 +1008,9 @@ body {
     position: relative;
 }
 
-/* Hidden state for chapter buttons - use visibility + width collapse for WebKit 16 compatibility */
-/* Avoid display:none which can cause layout issues when toggled in older WebKit */
+/* Hidden state for chapter buttons - fully collapse and remove from interaction */
 .chapter-button.chapter-hidden {
-    visibility: hidden;
-    width: 0 !important;
-    min-width: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    overflow: hidden;
-    pointer-events: none;
+    display: none !important;
 }
 
 .chapter-button::before {
@@ -1031,6 +1021,11 @@ body {
     left: -7px;
     right: -7px;
     /* Creates ~48px touch target */
+}
+
+/* Ensure hidden buttons have no touch target */
+.chapter-button.chapter-hidden::before {
+    display: none;
 }
 
 .control-button.chapter-button svg {
@@ -1079,12 +1074,7 @@ body {
 
 .chapter-button-fallback #prev-chapter-btn.chapter-hidden,
 .chapter-button-fallback #next-chapter-btn.chapter-hidden {
-    visibility: hidden;
-    width: 0 !important;
-    min-width: 0 !important;
-    height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
+    display: none !important;
 }
 
 .wpm-button {

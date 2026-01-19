@@ -1601,7 +1601,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260117a';
+    const BUILD_ID = '20260117b';
 
     // ============================================================
     // MAIN APPLICATION
@@ -2685,22 +2685,13 @@
             const hasChapters = chapters && chapters.length > 1;
 
             // Show/hide buttons based on whether document has chapters
-            // Use class toggle + explicit style for maximum WebKit compatibility
+            // Use both class and inline style for maximum WebKit compatibility
             if (hasChapters) {
-                // Remove hidden class
+                // Remove hidden class and set inline display
                 this.prevChapterBtn.classList.remove('chapter-hidden');
                 this.nextChapterBtn.classList.remove('chapter-hidden');
-
-                // Explicitly set display and dimensions for older WebKit (iPadOS 16)
-                // This ensures the browser doesn't cache the hidden state
                 this.prevChapterBtn.style.display = 'flex';
-                this.prevChapterBtn.style.visibility = 'visible';
-                this.prevChapterBtn.style.width = '';
-                this.prevChapterBtn.style.height = '';
                 this.nextChapterBtn.style.display = 'flex';
-                this.nextChapterBtn.style.visibility = 'visible';
-                this.nextChapterBtn.style.width = '';
-                this.nextChapterBtn.style.height = '';
 
                 // Force layout recalculation for older WebKit
                 void this.prevChapterBtn.offsetHeight;
@@ -2709,20 +2700,12 @@
                 // Enable/disable based on current position
                 this.prevChapterBtn.disabled = this.currentChapterIndex <= 0;
                 this.nextChapterBtn.disabled = this.currentChapterIndex >= chapters.length - 1;
-
-                // Debug logging for older devices
-                console.log('Chapter buttons shown:', {
-                    prevRect: this.prevChapterBtn.getBoundingClientRect(),
-                    nextRect: this.nextChapterBtn.getBoundingClientRect()
-                });
             } else {
+                // Add hidden class and clear inline style
                 this.prevChapterBtn.classList.add('chapter-hidden');
                 this.nextChapterBtn.classList.add('chapter-hidden');
-                // Clear inline styles so CSS class takes effect
                 this.prevChapterBtn.style.display = '';
-                this.prevChapterBtn.style.visibility = '';
                 this.nextChapterBtn.style.display = '';
-                this.nextChapterBtn.style.visibility = '';
             }
         }
 
