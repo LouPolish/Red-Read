@@ -1013,20 +1013,8 @@ body {
     display: none !important;
 }
 
-.chapter-button::before {
-    content: '';
-    position: absolute;
-    top: -7px;
-    bottom: -7px;
-    left: -7px;
-    right: -7px;
-    /* Creates ~48px touch target */
-}
-
-/* Ensure hidden buttons have no touch target */
-.chapter-button.chapter-hidden::before {
-    display: none;
-}
+/* NO pseudo-element touch target for chapter buttons - causes overlap issues on older WebKit */
+/* The 34px button size is sufficient for touch */
 
 .control-button.chapter-button svg {
     width: 17px;
@@ -1931,61 +1919,17 @@ body {
 
 /* Ramp state indicator - inner utility ring (left side, mirrors info button on right) */
 /* Uses control-button base styles, then overrides for special visual treatment */
-/* Broken circle with ~50° gap (25° on each side of horizontal) using conic-gradient mask */
+/* Simple dashed border for broken circle effect - WebKit compatible */
 .ramp-state-indicator {
     /* Inherits from .control-button: size, flex, border-radius */
     background: transparent;
-    border: 1.5px solid var(--text-muted);
+    border: 1.5px dashed var(--text-muted);
     opacity: 0.5;
-    position: relative;
-}
-
-/* Use pseudo-element for the broken circle effect */
-.ramp-state-indicator::before {
-    content: '';
-    position: absolute;
-    /* Use explicit positioning instead of 'inset' for WebKit 16 compatibility */
-    top: -1.5px;
-    right: -1.5px;
-    bottom: -1.5px;
-    left: -1.5px;
-    border-radius: 50%;
-    background: var(--bg-primary);
-    /* Mask out small sections at 3 o'clock and 9 o'clock (~25° each side) */
-    -webkit-mask: conic-gradient(
-        from 0deg,
-        transparent 0deg,
-        transparent 65deg,
-        black 65deg,
-        black 115deg,
-        transparent 115deg,
-        transparent 245deg,
-        black 245deg,
-        black 295deg,
-        transparent 295deg,
-        transparent 360deg
-    );
-    mask: conic-gradient(
-        from 0deg,
-        transparent 0deg,
-        transparent 65deg,
-        black 65deg,
-        black 115deg,
-        transparent 115deg,
-        transparent 245deg,
-        black 245deg,
-        black 295deg,
-        transparent 295deg,
-        transparent 360deg
-    );
-    pointer-events: none;
 }
 
 .ramp-state-indicator svg {
     stroke: var(--text-muted);
     fill: none;
-    position: relative;
-    z-index: 1;
 }
 
 /* Ramp enabled (configured but not running) - red outline + red icon */

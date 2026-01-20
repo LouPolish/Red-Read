@@ -1601,7 +1601,7 @@
     // ============================================================
     // BUILD VERSION
     // ============================================================
-    const BUILD_ID = '20260117b';
+    const BUILD_ID = '20260117d';
 
     // ============================================================
     // MAIN APPLICATION
@@ -1897,9 +1897,9 @@
             this.prevBtn.addEventListener('click', () => { Haptics.tap(); this.playback.step(-1); });
             this.nextBtn.addEventListener('click', () => { Haptics.tap(); this.playback.step(1); });
             this.progressSlider.addEventListener('input', (e) => this.playback.seekPercent(parseFloat(e.target.value)));
-            // Chapter navigation controls
-            this.prevChapterBtn.addEventListener('click', () => { Haptics.tap(); this.jumpToChapter(-1); });
-            this.nextChapterBtn.addEventListener('click', () => { Haptics.tap(); this.jumpToChapter(1); });
+            // Chapter navigation controls - stopPropagation for older WebKit compatibility
+            this.prevChapterBtn.addEventListener('click', (e) => { e.stopPropagation(); Haptics.tap(); this.jumpToChapter(-1); });
+            this.nextChapterBtn.addEventListener('click', (e) => { e.stopPropagation(); Haptics.tap(); this.jumpToChapter(1); });
 
             // Ramp state indicator toggle (tap to turn ramp on/off mid-read)
             this.rampStateIndicator.addEventListener('click', () => this.toggleRampDuringPlayback());
